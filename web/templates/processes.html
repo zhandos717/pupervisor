@@ -5,94 +5,80 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pupervisor - Processes</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%); }
-        .process-card { transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
-        .process-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-        .pulse { animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-        .sidebar { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
-        .status-indicator { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5); }
-        .log-line { font-family: 'JetBrains Mono', 'Fira Code', monospace; }
-        .log-info { color: #3b82f6; }
-        .log-error { color: #ef4444; }
-        .log-warning { color: #f59e0b; }
-    </style>
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
-<body class="min-h-screen bg-gray-50 text-gray-700">
-<div class="flex flex-col md:flex-row min-h-screen">
+<body>
+<div class="app-container">
     <!-- Sidebar -->
-    <aside class="sidebar text-white w-full md:w-64 p-5 hidden md:block">
-        <div class="mb-8">
-            <h1 class="text-xl font-bold flex items-center gap-2">
-                <i class="fas fa-cogs"></i>
-                <span>Pupervisor</span>
-            </h1>
-            <p class="text-gray-400 text-sm mt-1">Control Panel</p>
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+            <span>Pupervisor</span>
         </div>
-        <nav class="space-y-2">
-            <a href="/" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-700 transition-colors">
-                <i class="fas fa-tachometer-alt"></i>
+        <p class="sidebar-subtitle">Control Panel</p>
+        <nav class="sidebar-nav">
+            <a href="/" class="nav-link">
+                <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
                 <span>Dashboard</span>
             </a>
-            <a href="/processes" class="nav-link flex items-center gap-3 p-3 rounded-lg bg-blue-600 text-white">
-                <i class="fas fa-server"></i>
+            <a href="/processes" class="nav-link active">
+                <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M20 13H4c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h16c.55 0 1-.45 1-1v-6c0-.55-.45-1-1-1zM7 19c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zM20 3H4c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h16c.55 0 1-.45 1-1V4c0-.55-.45-1-1-1zM7 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
                 <span>Processes</span>
             </a>
-            <a href="/logs" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-700 transition-colors">
-                <i class="fas fa-file-alt"></i>
+            <a href="/logs" class="nav-link">
+                <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
                 <span>Logs</span>
             </a>
-            <a href="/settings" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-700 transition-colors">
-                <i class="fas fa-cog"></i>
+            <a href="/settings" class="nav-link">
+                <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
                 <span>Settings</span>
             </a>
         </nav>
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1">
+    <main class="main-content">
         <!-- Header -->
-        <header class="bg-white text-gray-800 py-4 sticky top-0 z-50 shadow-sm border-b">
-            <div class="px-5 md:px-8 flex justify-between items-center w-full">
-                <h1 class="text-xl md:text-2xl font-bold flex items-center gap-2">
-                    <i class="fas fa-server text-blue-500"></i>
-                    <span>Process Management</span>
-                </h1>
-                <div class="flex gap-3 items-center">
-                    <div class="hidden md:flex items-center gap-2 text-sm">
-                        <div class="w-2 h-2 bg-green-500 rounded-full pulse"></div>
-                        <span>System Online</span>
-                    </div>
-                    <button id="refresh-btn" class="p-2 rounded-md bg-blue-100 hover:bg-blue-200 transition-colors" title="Refresh">
-                        <i class="fas fa-sync-alt text-blue-600"></i>
-                    </button>
+        <header class="header">
+            <h1 class="header-title">
+                <svg class="icon icon-lg" viewBox="0 0 24 24" fill="var(--color-primary)"><path d="M20 13H4c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h16c.55 0 1-.45 1-1v-6c0-.55-.45-1-1-1zM7 19c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zM20 3H4c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h16c.55 0 1-.45 1-1V4c0-.55-.45-1-1-1zM7 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
+                <span>Process Management</span>
+            </h1>
+            <div class="header-actions">
+                <div class="status-online">
+                    <span class="status-dot"></span>
+                    <span>System Online</span>
                 </div>
+                <button id="refresh-btn" class="btn btn-primary btn-icon" title="Refresh">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                </button>
             </div>
         </header>
 
         <!-- Process List -->
-        <div class="px-5 md:px-8 py-6">
-            <section class="bg-white rounded-xl shadow-sm border border-gray-200">
-                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-                    <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                        <i class="fas fa-server text-blue-500"></i>
+        <div class="content">
+            <section class="card">
+                <div class="card-header" style="flex-wrap: wrap; gap: 12px;">
+                    <h2 class="card-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="var(--color-primary)"><path d="M20 13H4c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h16c.55 0 1-.45 1-1v-6c0-.55-.45-1-1-1zM7 19c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zM20 3H4c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h16c.55 0 1-.45 1-1V4c0-.55-.45-1-1-1zM7 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
                         All Processes
+                        <span id="process-count" class="process-count-badge">0</span>
                     </h2>
-                    <div class="flex gap-2">
-                        <select id="filter-status" class="text-xs px-3 py-1 bg-gray-100 border rounded-md">
+                    <div class="flex items-center gap-4" style="flex-wrap: wrap;">
+                        <div class="search-box">
+                            <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                            <input type="text" id="search-input" class="search-input" placeholder="Search processes...">
+                        </div>
+                        <select id="filter-status" class="form-select" style="width: auto; padding: 6px 12px; font-size: 13px;">
                             <option value="all">All Status</option>
                             <option value="running">Running</option>
                             <option value="stopped">Stopped</option>
                         </select>
                     </div>
                 </div>
-                <div id="processes-container" class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div class="col-span-full text-center text-gray-500 py-8">
-                        <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                <div id="processes-container" class="card-body process-grid">
+                    <div class="empty-state">
+                        <div class="spinner"></div>
                         <p>Loading processes...</p>
                     </div>
                 </div>
@@ -102,32 +88,31 @@
 </div>
 
 <!-- Log Modal -->
-<div id="log-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[80vh] flex flex-col">
-        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 rounded-t-xl flex justify-between items-center">
-            <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                <i class="fas fa-terminal text-blue-500"></i>
+<div id="log-modal" class="modal-overlay">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <svg class="icon" viewBox="0 0 24 24" fill="var(--color-primary)"><path d="M20 19.59V8l-6-6H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c.45 0 .85-.15 1.19-.4l-4.43-4.43c-.8.52-1.74.83-2.76.83-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5c0 1.02-.31 1.96-.83 2.75L20 19.59zM9 13c0 1.66 1.34 3 3 3s3-1.34 3-3-1.34-3-3-3-3 1.34-3 3z"/></svg>
                 <span id="modal-title">Process Output</span>
             </h3>
-            <div class="flex items-center gap-3">
-                <label class="flex items-center gap-2 text-sm">
-                    <input type="checkbox" id="auto-scroll" checked class="rounded">
-                    Auto-scroll
+            <div class="flex items-center gap-4">
+                <label class="form-checkbox" style="font-size: 13px;">
+                    <input type="checkbox" id="auto-scroll" checked>
+                    <span>Auto-scroll</span>
                 </label>
-                <button onclick="closeLogModal()" class="p-2 hover:bg-gray-200 rounded-lg transition-colors">
-                    <i class="fas fa-times text-gray-600"></i>
-                </button>
+                <button onclick="closeLogModal()" class="modal-close">&times;</button>
             </div>
         </div>
-        <div id="log-content" class="flex-1 overflow-y-auto p-4 bg-gray-900 text-gray-100 font-mono text-sm min-h-[400px]">
-            <p class="text-gray-500">Loading logs...</p>
+        <div id="log-content" class="modal-body log-container" style="min-height: 400px;">
+            <p class="text-muted">Loading logs...</p>
         </div>
-        <div class="px-6 py-3 border-t border-gray-200 bg-gray-50 rounded-b-xl flex justify-between items-center">
-            <span id="log-status" class="text-sm text-gray-500">
-                <i class="fas fa-circle text-green-500 mr-1"></i> Live
+        <div class="modal-footer">
+            <span id="log-status" class="text-muted" style="font-size: 13px;">
+                <span class="status-dot" style="display: inline-block; margin-right: 6px;"></span> Live
             </span>
-            <button onclick="clearLogs()" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm transition-colors">
-                <i class="fas fa-trash mr-1"></i> Clear View
+            <button onclick="clearLogs()" class="btn btn-secondary" style="font-size: 13px;">
+                <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                Clear View
             </button>
         </div>
     </div>
@@ -161,41 +146,34 @@ let allProcesses = [];
 let currentLogProcess = null;
 let logRefreshInterval = null;
 
-function getStatusClasses(status) {
-    const s = status.toLowerCase();
-    if (s === 'running') return { border: 'border-green-500', bg: 'bg-green-500', badge: 'bg-green-100 text-green-800', text: 'text-green-600' };
-    if (s === 'stopped') return { border: 'border-red-500', bg: 'bg-red-500', badge: 'bg-red-100 text-red-800', text: 'text-red-600' };
-    return { border: 'border-yellow-500', bg: 'bg-yellow-500', badge: 'bg-yellow-100 text-yellow-800', text: 'text-yellow-600' };
-}
-
 function renderProcessCard(p) {
-    const cls = getStatusClasses(p.status);
     const isRunning = p.status.toLowerCase() === 'running';
     const isStopped = p.status.toLowerCase() === 'stopped';
+    const statusClass = isRunning ? 'running' : isStopped ? 'stopped' : '';
 
     return `
-        <div class="process-card bg-white border border-gray-200 rounded-lg p-5 min-h-[200px] flex flex-col border-l-4 ${cls.border}">
-            <div class="flex items-center mb-3">
-                <span class="w-3 h-3 ${cls.bg} rounded-full mr-2 status-indicator ${isRunning ? 'pulse' : ''}"></span>
-                <h3 class="text-lg font-semibold text-gray-800">${p.name}</h3>
-                <span class="ml-auto px-2 py-1 text-xs ${cls.badge} rounded-full">${p.status}</span>
+        <div class="process-card ${statusClass}">
+            <div class="process-header">
+                <span class="process-status-dot ${statusClass}"></span>
+                <span class="process-name">${p.name}</span>
+                <span class="process-badge ${statusClass}">${p.status}</span>
             </div>
-            <div class="text-sm text-gray-600 mb-3 space-y-1">
-                <div class="flex justify-between"><span class="font-medium">PID:</span><span>${p.pid || 'N/A'}</span></div>
-                <div class="flex justify-between"><span class="font-medium">Uptime:</span><span>${p.uptime || 'N/A'}</span></div>
+            <div class="process-info">
+                <div class="process-info-row"><span class="process-info-label">PID:</span><span class="process-info-value">${p.pid || 'N/A'}</span></div>
+                <div class="process-info-row"><span class="process-info-label">Uptime:</span><span class="process-info-value">${p.uptime || 'N/A'}</span></div>
             </div>
-            <div class="flex flex-wrap gap-2 mt-auto">
-                <button onclick="handleStart('${p.name}')" class="flex-1 min-w-[60px] px-2 py-2 bg-green-500 text-white rounded text-sm hover:bg-green-600 transition-colors ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}" ${isRunning ? 'disabled' : ''}>
-                    <i class="fas fa-play"></i>
+            <div class="process-actions">
+                <button onclick="handleStart('${p.name}')" class="btn btn-success" ${isRunning ? 'disabled' : ''} title="Start">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                 </button>
-                <button onclick="handleStop('${p.name}')" class="flex-1 min-w-[60px] px-2 py-2 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-colors ${isStopped ? 'opacity-50 cursor-not-allowed' : ''}" ${isStopped ? 'disabled' : ''}>
-                    <i class="fas fa-stop"></i>
+                <button onclick="handleStop('${p.name}')" class="btn btn-danger" ${isStopped ? 'disabled' : ''} title="Stop">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h12v12H6z"/></svg>
                 </button>
-                <button onclick="handleRestart('${p.name}')" class="flex-1 min-w-[60px] px-2 py-2 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600 transition-colors">
-                    <i class="fas fa-sync"></i>
+                <button onclick="handleRestart('${p.name}')" class="btn btn-warning" title="Restart">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
                 </button>
-                <button onclick="showLogs('${p.name}')" class="flex-1 min-w-[60px] px-2 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 transition-colors">
-                    <i class="fas fa-terminal"></i>
+                <button onclick="showLogs('${p.name}')" class="btn btn-primary" title="View Logs">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M20 19.59V8l-6-6H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c.45 0 .85-.15 1.19-.4l-4.43-4.43c-.8.52-1.74.83-2.76.83-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5c0 1.02-.31 1.96-.83 2.75L20 19.59zM9 13c0 1.66 1.34 3 3 3s3-1.34 3-3-1.34-3-3-3-3 1.34-3 3z"/></svg>
                 </button>
             </div>
         </div>
@@ -206,7 +184,12 @@ function renderProcesses(processes) {
     const container = document.getElementById('processes-container');
     container.innerHTML = processes.length
         ? processes.map(renderProcessCard).join('')
-        : '<p class="col-span-full text-center text-gray-500 py-8">No processes configured. Edit pupervisor.yaml to add processes.</p>';
+        : '<div class="empty-state"><p>No processes found.</p></div>';
+}
+
+function updateProcessCount(count, total) {
+    const badge = document.getElementById('process-count');
+    badge.textContent = count === total ? total : `${count}/${total}`;
 }
 
 async function loadProcesses() {
@@ -216,9 +199,21 @@ async function loadProcesses() {
 
 function applyFilter() {
     const filter = document.getElementById('filter-status').value;
-    const filtered = filter === 'all'
-        ? allProcesses
-        : allProcesses.filter(p => p.status.toLowerCase() === filter);
+    const search = document.getElementById('search-input').value.toLowerCase().trim();
+
+    let filtered = allProcesses;
+
+    // Apply status filter
+    if (filter !== 'all') {
+        filtered = filtered.filter(p => p.status.toLowerCase() === filter);
+    }
+
+    // Apply search filter
+    if (search) {
+        filtered = filtered.filter(p => p.name.toLowerCase().includes(search));
+    }
+
+    updateProcessCount(filtered.length, allProcesses.length);
     renderProcesses(filtered);
 }
 
@@ -244,7 +239,7 @@ async function handleRestart(name) {
 async function showLogs(processName) {
     currentLogProcess = processName;
     document.getElementById('modal-title').textContent = `${processName} - Output`;
-    document.getElementById('log-modal').classList.remove('hidden');
+    document.getElementById('log-modal').classList.add('active');
 
     await refreshLogs();
 
@@ -259,14 +254,14 @@ async function refreshLogs() {
     const container = document.getElementById('log-content');
 
     if (logs.length === 0) {
-        container.innerHTML = '<p class="text-gray-500">No output yet. Start the process to see logs.</p>';
+        container.innerHTML = '<p class="text-muted">No output yet. Start the process to see logs.</p>';
         return;
     }
 
     container.innerHTML = logs.map(log => {
-        const levelClass = log.level === 'error' ? 'log-error' : log.level === 'warning' ? 'log-warning' : 'log-info';
+        const levelClass = log.level === 'error' ? 'error' : log.level === 'warning' ? 'warning' : 'info';
         const time = log.timestamp.split('T')[1]?.split('.')[0] || log.timestamp;
-        return `<div class="log-line py-1"><span class="text-gray-500">[${time}]</span> <span class="${levelClass}">${escapeHtml(log.message)}</span></div>`;
+        return `<div class="log-entry ${levelClass}"><span class="log-time">[${time}]</span> <span class="log-message">${escapeHtml(log.message)}</span></div>`;
     }).join('');
 
     // Auto-scroll
@@ -276,7 +271,7 @@ async function refreshLogs() {
 }
 
 function closeLogModal() {
-    document.getElementById('log-modal').classList.add('hidden');
+    document.getElementById('log-modal').classList.remove('active');
     currentLogProcess = null;
     if (logRefreshInterval) {
         clearInterval(logRefreshInterval);
@@ -285,7 +280,7 @@ function closeLogModal() {
 }
 
 function clearLogs() {
-    document.getElementById('log-content').innerHTML = '<p class="text-gray-500">View cleared</p>';
+    document.getElementById('log-content').innerHTML = '<p class="text-muted">View cleared</p>';
 }
 
 function escapeHtml(text) {
@@ -306,6 +301,7 @@ document.getElementById('log-modal').addEventListener('click', (e) => {
 
 document.getElementById('refresh-btn').addEventListener('click', loadProcesses);
 document.getElementById('filter-status').addEventListener('change', applyFilter);
+document.getElementById('search-input').addEventListener('input', applyFilter);
 document.addEventListener('DOMContentLoaded', loadProcesses);
 
 // Auto-refresh every 5 seconds

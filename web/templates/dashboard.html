@@ -5,174 +5,178 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pupervisor - Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%); }
-        .process-card { transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
-        .process-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-        .log-entry { border-left: 3px solid transparent; transition: all 0.2s ease; }
-        .log-entry:hover { background-color: rgba(249, 250, 251, 0.8); }
-        .log-info { border-left-color: #3b82f6; }
-        .log-warning { border-left-color: #f59e0b; }
-        .log-error { border-left-color: #ef4444; }
-        .pulse { animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-        .sidebar { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
-        .status-indicator { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5); }
-        .skeleton { animation: skeleton-loading 1s linear infinite alternate; }
-        @keyframes skeleton-loading { 0% { background-color: #e5e7eb; } 100% { background-color: #f3f4f6; } }
-    </style>
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
-<body class="min-h-screen bg-gray-50 text-gray-700">
-<div class="flex flex-col md:flex-row min-h-screen">
+<body>
+<div class="app-container">
     <!-- Sidebar -->
-    <aside class="sidebar text-white w-full md:w-64 p-5 hidden md:block">
-        <div class="mb-8">
-            <h1 class="text-xl font-bold flex items-center gap-2">
-                <i class="fas fa-cogs"></i>
-                <span>Pupervisor</span>
-            </h1>
-            <p class="text-gray-400 text-sm mt-1">Control Panel</p>
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+            <span>Pupervisor</span>
         </div>
-        <nav class="space-y-2">
-            <a href="/" class="nav-link flex items-center gap-3 p-3 rounded-lg bg-blue-600 text-white">
-                <i class="fas fa-tachometer-alt"></i>
+        <p class="sidebar-subtitle">Control Panel</p>
+        <nav class="sidebar-nav">
+            <a href="/" class="nav-link active">
+                <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
                 <span>Dashboard</span>
             </a>
-            <a href="/processes" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-700 transition-colors">
-                <i class="fas fa-server"></i>
+            <a href="/processes" class="nav-link">
+                <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M20 13H4c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h16c.55 0 1-.45 1-1v-6c0-.55-.45-1-1-1zM7 19c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zM20 3H4c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h16c.55 0 1-.45 1-1V4c0-.55-.45-1-1-1zM7 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
                 <span>Processes</span>
             </a>
-            <a href="/logs" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-700 transition-colors">
-                <i class="fas fa-file-alt"></i>
+            <a href="/logs" class="nav-link">
+                <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
                 <span>Logs</span>
             </a>
-            <a href="/settings" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-700 transition-colors">
-                <i class="fas fa-cog"></i>
+            <a href="/settings" class="nav-link">
+                <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
                 <span>Settings</span>
             </a>
         </nav>
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1">
+    <main class="main-content">
         <!-- Header -->
-        <header class="bg-white text-gray-800 py-4 sticky top-0 z-50 shadow-sm border-b">
-            <div class="px-5 md:px-8 flex justify-between items-center w-full">
-                <h1 class="text-xl md:text-2xl font-bold flex items-center gap-2">
-                    <i class="fas fa-tachometer-alt text-blue-500"></i>
-                    <span>Dashboard</span>
-                </h1>
-                <div class="flex gap-3 items-center">
-                    <div class="hidden md:flex items-center gap-2 text-sm">
-                        <div class="w-2 h-2 bg-green-500 rounded-full pulse"></div>
-                        <span>System Online</span>
-                    </div>
-                    <button id="refresh-btn" class="p-2 rounded-md bg-blue-100 hover:bg-blue-200 transition-colors" title="Refresh">
-                        <i class="fas fa-sync-alt text-blue-600"></i>
-                    </button>
+        <header class="header">
+            <h1 class="header-title">
+                <svg class="icon icon-lg" viewBox="0 0 24 24" fill="var(--color-primary)"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                <span>Dashboard</span>
+            </h1>
+            <div class="header-actions">
+                <div class="status-online">
+                    <span class="status-dot"></span>
+                    <span>System Online</span>
                 </div>
+                <button id="refresh-btn" class="btn btn-primary btn-icon" title="Refresh">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                </button>
             </div>
         </header>
 
         <!-- Dashboard Stats -->
-        <div class="px-5 md:px-8 py-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-gray-500 text-sm">Active Processes</p>
-                        <p id="active-processes" class="text-2xl font-bold mt-1">-</p>
+        <div class="content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <p class="stat-label">Active Processes</p>
+                            <p id="active-processes" class="stat-value">-</p>
+                        </div>
+                        <div class="stat-icon green">
+                            <svg class="icon icon-lg" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                        </div>
                     </div>
-                    <div class="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
-                        <i class="fas fa-play-circle text-green-500 text-xl"></i>
+                    <div class="progress-bar">
+                        <div id="active-processes-bar" class="progress-fill green" style="width: 0%"></div>
+                    </div>
+                    <p id="active-processes-percent" class="progress-text">0% running</p>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <p class="stat-label">Total Processes</p>
+                            <p id="total-processes" class="stat-value">-</p>
+                        </div>
+                        <div class="stat-icon blue">
+                            <svg class="icon icon-lg" viewBox="0 0 24 24" fill="currentColor"><path d="M20 13H4c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h16c.55 0 1-.45 1-1v-6c0-.55-.45-1-1-1zM7 19c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zM20 3H4c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h16c.55 0 1-.45 1-1V4c0-.55-.45-1-1-1zM7 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
+                        </div>
                     </div>
                 </div>
-                <div class="mt-4">
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div id="active-processes-bar" class="bg-green-500 h-2 rounded-full transition-all" style="width: 0%"></div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <p class="stat-label">Running</p>
+                            <p id="running-count" class="stat-value" style="color: var(--color-success)">-</p>
+                        </div>
+                        <div class="stat-icon green">
+                            <svg class="icon icon-lg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                        </div>
                     </div>
-                    <p id="active-processes-percent" class="text-xs text-gray-500 mt-2">0% running</p>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <p class="stat-label">Stopped</p>
+                            <p id="stopped-count" class="stat-value" style="color: var(--color-danger)">-</p>
+                        </div>
+                        <div class="stat-icon red">
+                            <svg class="icon icon-lg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/><path d="M9 9h6v6H9z"/></svg>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-gray-500 text-sm">Total Processes</p>
-                        <p id="total-processes" class="text-2xl font-bold mt-1">-</p>
+            <!-- Charts Row -->
+            <div class="grid-2" style="gap: 24px; margin-bottom: 24px;">
+                <!-- Status Distribution Chart -->
+                <section class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <svg class="icon" viewBox="0 0 24 24" fill="var(--color-primary)"><path d="M11 2v20c-5.07-.5-9-4.79-9-10s3.93-9.5 9-10zm2.03 0v8.99H22c-.47-4.74-4.24-8.52-8.97-8.99zm0 11.01V22c4.74-.47 8.5-4.25 8.97-8.99h-8.97z"/></svg>
+                            Status Distribution
+                        </h2>
                     </div>
-                    <div class="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
-                        <i class="fas fa-server text-blue-500 text-xl"></i>
+                    <div class="card-body" style="display: flex; align-items: center; justify-content: center; gap: 32px;">
+                        <canvas id="status-chart" width="160" height="160"></canvas>
+                        <div id="chart-legend" class="chart-legend"></div>
                     </div>
-                </div>
+                </section>
+
+                <!-- Activity Chart -->
+                <section class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <svg class="icon" viewBox="0 0 24 24" fill="var(--color-primary)"><path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/></svg>
+                            Activity (Last Hour)
+                        </h2>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="activity-chart" width="100%" height="120"></canvas>
+                    </div>
+                </section>
             </div>
 
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-gray-500 text-sm">Running</p>
-                        <p id="running-count" class="text-2xl font-bold mt-1 text-green-600">-</p>
+            <!-- Dashboard Content -->
+            <div class="grid-3" style="gap: 24px;">
+                <!-- Recent Processes -->
+                <section class="card" style="grid-column: span 2;">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <svg class="icon" viewBox="0 0 24 24" fill="var(--color-primary)"><path d="M20 13H4c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h16c.55 0 1-.45 1-1v-6c0-.55-.45-1-1-1zM7 19c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zM20 3H4c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h16c.55 0 1-.45 1-1V4c0-.55-.45-1-1-1zM7 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
+                            Processes
+                        </h2>
+                        <a href="/processes" class="btn btn-primary" style="font-size: 12px;">View All</a>
                     </div>
-                    <div class="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
-                        <i class="fas fa-check-circle text-green-500 text-xl"></i>
+                    <div id="processes-container" class="card-body process-grid">
+                        <div class="empty-state">
+                            <div class="spinner"></div>
+                            <p>Loading processes...</p>
+                        </div>
                     </div>
-                </div>
+                </section>
+
+                <!-- Recent Logs -->
+                <section class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <svg class="icon" viewBox="0 0 24 24" fill="var(--color-primary)"><path d="M20 19.59V8l-6-6H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c.45 0 .85-.15 1.19-.4l-4.43-4.43c-.8.52-1.74.83-2.76.83-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5c0 1.02-.31 1.96-.83 2.75L20 19.59zM9 13c0 1.66 1.34 3 3 3s3-1.34 3-3-1.34-3-3-3-3 1.34-3 3z"/></svg>
+                            Recent Logs
+                        </h2>
+                        <a href="/logs" class="btn btn-primary" style="font-size: 12px;">View All</a>
+                    </div>
+                    <div id="logs-container" class="log-container" style="max-height: 320px;">
+                        <div class="empty-state">
+                            <div class="spinner"></div>
+                            <p>Loading logs...</p>
+                        </div>
+                    </div>
+                </section>
             </div>
-
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-gray-500 text-sm">Stopped</p>
-                        <p id="stopped-count" class="text-2xl font-bold mt-1 text-red-600">-</p>
-                    </div>
-                    <div class="w-12 h-12 rounded-lg bg-red-100 flex items-center justify-center">
-                        <i class="fas fa-stop-circle text-red-500 text-xl"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Dashboard Content -->
-        <div class="px-5 md:px-8 grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            <!-- Recent Processes -->
-            <section class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200">
-                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-                    <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                        <i class="fas fa-server text-blue-500"></i>
-                        Processes
-                    </h2>
-                    <a href="/processes" class="text-xs px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-md transition-colors">
-                        <i class="fas fa-external-link-alt mr-1"></i> View All
-                    </a>
-                </div>
-                <div id="processes-container" class="p-4 grid grid-cols-1 gap-4">
-                    <div class="text-center text-gray-500 py-8">
-                        <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
-                        <p>Loading processes...</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Recent Logs -->
-            <section class="bg-white rounded-xl shadow-sm border border-gray-200">
-                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-                    <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                        <i class="fas fa-terminal text-blue-500"></i>
-                        Recent Logs
-                    </h2>
-                    <a href="/logs" class="text-xs px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-md transition-colors">
-                        <i class="fas fa-external-link-alt mr-1"></i> View All
-                    </a>
-                </div>
-                <div id="logs-container" class="h-80 overflow-y-auto p-4 bg-gray-50 font-mono text-xs">
-                    <div class="text-center text-gray-500 py-8">
-                        <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
-                        <p>Loading logs...</p>
-                    </div>
-                </div>
-            </section>
         </div>
     </main>
 </div>
@@ -201,36 +205,32 @@ const API = {
     }
 };
 
-function getStatusClasses(status) {
-    const s = status.toLowerCase();
-    if (s === 'running') return { border: 'border-green-500', bg: 'bg-green-500', badge: 'bg-green-100 text-green-800', text: 'text-green-600' };
-    if (s === 'stopped') return { border: 'border-red-500', bg: 'bg-red-500', badge: 'bg-red-100 text-red-800', text: 'text-red-600' };
-    return { border: 'border-yellow-500', bg: 'bg-yellow-500', badge: 'bg-yellow-100 text-yellow-800', text: 'text-yellow-600' };
-}
-
 function renderProcessCard(p) {
-    const cls = getStatusClasses(p.status);
+    const isRunning = p.status.toLowerCase() === 'running';
+    const isStopped = p.status.toLowerCase() === 'stopped';
+    const statusClass = isRunning ? 'running' : isStopped ? 'stopped' : '';
+
     return `
-        <div class="process-card bg-white border border-gray-200 rounded-lg p-5 flex flex-col border-l-4 ${cls.border}">
-            <div class="flex items-center mb-3">
-                <span class="w-3 h-3 ${cls.bg} rounded-full mr-2 status-indicator"></span>
-                <h3 class="text-lg font-semibold text-gray-800">${p.name}</h3>
-                <span class="ml-auto px-2 py-1 text-xs ${cls.badge} rounded-full">${p.status}</span>
+        <div class="process-card ${statusClass}">
+            <div class="process-header">
+                <span class="process-status-dot ${statusClass}"></span>
+                <span class="process-name">${p.name}</span>
+                <span class="process-badge ${statusClass}">${p.status}</span>
             </div>
-            <div class="text-sm text-gray-600 mb-3 space-y-1">
-                <div class="flex justify-between"><span class="font-medium">PID:</span><span>${p.pid || 'N/A'}</span></div>
-                <div class="flex justify-between"><span class="font-medium">Uptime:</span><span>${p.uptime || 'N/A'}</span></div>
-                <div class="flex justify-between"><span class="font-medium">Memory:</span><span>${p.memory || 'N/A'}</span></div>
+            <div class="process-info">
+                <div class="process-info-row"><span class="process-info-label">PID:</span><span class="process-info-value">${p.pid || 'N/A'}</span></div>
+                <div class="process-info-row"><span class="process-info-label">Uptime:</span><span class="process-info-value">${p.uptime || 'N/A'}</span></div>
+                <div class="process-info-row"><span class="process-info-label">Memory:</span><span class="process-info-value">${p.memory || 'N/A'}</span></div>
             </div>
-            <div class="flex flex-wrap gap-2 mt-auto">
-                <button onclick="handleStart('${p.name}')" class="flex-1 px-3 py-2 bg-green-500 text-white rounded text-sm hover:bg-green-600 transition-colors ${p.status.toLowerCase() === 'running' ? 'opacity-50 cursor-not-allowed' : ''}">
-                    <i class="fas fa-play mr-1"></i> Start
+            <div class="process-actions">
+                <button onclick="handleStart('${p.name}')" class="btn btn-success" ${isRunning ? 'disabled' : ''}>
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                 </button>
-                <button onclick="handleStop('${p.name}')" class="flex-1 px-3 py-2 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-colors ${p.status.toLowerCase() === 'stopped' ? 'opacity-50 cursor-not-allowed' : ''}">
-                    <i class="fas fa-stop mr-1"></i> Stop
+                <button onclick="handleStop('${p.name}')" class="btn btn-danger" ${isStopped ? 'disabled' : ''}>
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h12v12H6z"/></svg>
                 </button>
-                <button onclick="handleRestart('${p.name}')" class="flex-1 px-3 py-2 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600 transition-colors">
-                    <i class="fas fa-sync mr-1"></i> Restart
+                <button onclick="handleRestart('${p.name}')" class="btn btn-warning">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
                 </button>
             </div>
         </div>
@@ -239,17 +239,175 @@ function renderProcessCard(p) {
 
 function renderLogEntry(log) {
     const level = (log.level || 'info').toLowerCase();
-    const levelClass = level === 'error' ? 'log-error' : level === 'warning' ? 'log-warning' : 'log-info';
-    const textClass = level === 'error' ? 'text-red-600' : level === 'warning' ? 'text-yellow-600' : 'text-blue-600';
+    const levelClass = level === 'error' ? 'error' : level === 'warning' ? 'warning' : 'info';
     return `
-        <div class="log-entry ${levelClass} p-3 mb-2 bg-white rounded border-l-4">
-            <div class="flex justify-between">
-                <span class="text-gray-500">[${log.timestamp}]</span>
-                <span class="${textClass} font-medium">${log.level.toUpperCase()}</span>
-            </div>
-            <div class="text-gray-700 mt-1">${log.message}</div>
+        <div class="log-entry ${levelClass}">
+            <span class="log-time">[${log.timestamp}]</span>
+            <span class="log-level ${levelClass}">${log.level.toUpperCase()}</span>
+            <span class="log-message">${log.message}</span>
         </div>
     `;
+}
+
+// Activity history for chart
+let activityHistory = [];
+const MAX_HISTORY = 12; // 12 points = 1 hour with 5min intervals
+
+function drawDonutChart(running, stopped, other) {
+    const canvas = document.getElementById('status-chart');
+    const ctx = canvas.getContext('2d');
+    const total = running + stopped + other;
+
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radius = 70;
+    const innerRadius = 45;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (total === 0) {
+        // Draw empty state
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        ctx.strokeStyle = '#e5e7eb';
+        ctx.lineWidth = radius - innerRadius;
+        ctx.stroke();
+
+        ctx.fillStyle = '#9ca3af';
+        ctx.font = '14px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('No data', centerX, centerY + 5);
+        return;
+    }
+
+    const data = [
+        { value: running, color: '#22c55e', label: 'Running' },
+        { value: stopped, color: '#ef4444', label: 'Stopped' },
+        { value: other, color: '#f59e0b', label: 'Other' }
+    ].filter(d => d.value > 0);
+
+    let startAngle = -Math.PI / 2;
+
+    data.forEach(segment => {
+        const sliceAngle = (segment.value / total) * 2 * Math.PI;
+
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
+        ctx.arc(centerX, centerY, innerRadius, startAngle + sliceAngle, startAngle, true);
+        ctx.closePath();
+        ctx.fillStyle = segment.color;
+        ctx.fill();
+
+        startAngle += sliceAngle;
+    });
+
+    // Center text
+    ctx.fillStyle = '#1f2937';
+    ctx.font = 'bold 24px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(total, centerX, centerY + 8);
+
+    // Update legend
+    const legend = document.getElementById('chart-legend');
+    legend.innerHTML = data.map(d => `
+        <div class="legend-item">
+            <span class="legend-dot" style="background: ${d.color}"></span>
+            <span class="legend-label">${d.label}</span>
+            <span class="legend-value">${d.value}</span>
+        </div>
+    `).join('');
+}
+
+function drawActivityChart(history) {
+    const canvas = document.getElementById('activity-chart');
+    const ctx = canvas.getContext('2d');
+
+    // Set canvas size to match container
+    canvas.width = canvas.parentElement.clientWidth - 48;
+    canvas.height = 120;
+
+    const width = canvas.width;
+    const height = canvas.height;
+    const padding = { top: 10, right: 10, bottom: 25, left: 30 };
+    const chartWidth = width - padding.left - padding.right;
+    const chartHeight = height - padding.top - padding.bottom;
+
+    ctx.clearRect(0, 0, width, height);
+
+    if (history.length < 2) {
+        ctx.fillStyle = '#9ca3af';
+        ctx.font = '14px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Collecting data...', width / 2, height / 2);
+        return;
+    }
+
+    const maxValue = Math.max(...history.map(h => h.running + h.stopped), 1);
+    const xStep = chartWidth / (MAX_HISTORY - 1);
+
+    // Draw grid lines
+    ctx.strokeStyle = '#e5e7eb';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+        const y = padding.top + (chartHeight / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(padding.left, y);
+        ctx.lineTo(width - padding.right, y);
+        ctx.stroke();
+    }
+
+    // Draw running line
+    ctx.strokeStyle = '#22c55e';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    history.forEach((point, i) => {
+        const x = padding.left + i * xStep;
+        const y = padding.top + chartHeight - (point.running / maxValue) * chartHeight;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // Draw running area
+    ctx.fillStyle = 'rgba(34, 197, 94, 0.1)';
+    ctx.beginPath();
+    history.forEach((point, i) => {
+        const x = padding.left + i * xStep;
+        const y = padding.top + chartHeight - (point.running / maxValue) * chartHeight;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    });
+    ctx.lineTo(padding.left + (history.length - 1) * xStep, padding.top + chartHeight);
+    ctx.lineTo(padding.left, padding.top + chartHeight);
+    ctx.closePath();
+    ctx.fill();
+
+    // Draw points
+    ctx.fillStyle = '#22c55e';
+    history.forEach((point, i) => {
+        const x = padding.left + i * xStep;
+        const y = padding.top + chartHeight - (point.running / maxValue) * chartHeight;
+        ctx.beginPath();
+        ctx.arc(x, y, 3, 0, 2 * Math.PI);
+        ctx.fill();
+    });
+
+    // Draw time labels
+    ctx.fillStyle = '#9ca3af';
+    ctx.font = '11px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    const now = new Date();
+    for (let i = 0; i < history.length; i += 3) {
+        const x = padding.left + i * xStep;
+        const minutesAgo = (history.length - 1 - i) * 5;
+        const time = new Date(now - minutesAgo * 60000);
+        ctx.fillText(time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }), x, height - 5);
+    }
+
+    // Y-axis labels
+    ctx.textAlign = 'right';
+    ctx.fillText(maxValue, padding.left - 5, padding.top + 10);
+    ctx.fillText('0', padding.left - 5, padding.top + chartHeight);
 }
 
 async function loadDashboard() {
@@ -258,6 +416,7 @@ async function loadDashboard() {
     // Update stats
     const running = processes.filter(p => p.status.toLowerCase() === 'running').length;
     const stopped = processes.filter(p => p.status.toLowerCase() === 'stopped').length;
+    const other = processes.length - running - stopped;
     const total = processes.length;
     const percent = total > 0 ? Math.round((running / total) * 100) : 0;
 
@@ -268,17 +427,30 @@ async function loadDashboard() {
     document.getElementById('active-processes-bar').style.width = `${percent}%`;
     document.getElementById('active-processes-percent').textContent = `${percent}% running`;
 
+    // Update charts
+    drawDonutChart(running, stopped, other);
+
+    // Update activity history (every call, we track the state)
+    const now = Date.now();
+    if (activityHistory.length === 0 || now - activityHistory[activityHistory.length - 1].time >= 5000) {
+        activityHistory.push({ time: now, running, stopped });
+        if (activityHistory.length > MAX_HISTORY) {
+            activityHistory.shift();
+        }
+    }
+    drawActivityChart(activityHistory);
+
     // Render processes
     const container = document.getElementById('processes-container');
     container.innerHTML = processes.length
         ? processes.map(renderProcessCard).join('')
-        : '<p class="text-center text-gray-500 py-8">No processes found</p>';
+        : '<div class="empty-state"><p>No processes found</p></div>';
 
     // Render logs
     const logsContainer = document.getElementById('logs-container');
     logsContainer.innerHTML = logs.length
         ? logs.slice(-20).reverse().map(renderLogEntry).join('')
-        : '<p class="text-center text-gray-500 py-8">No logs available</p>';
+        : '<div class="empty-state"><p>No logs available</p></div>';
 }
 
 async function handleStart(name) {
@@ -295,6 +467,13 @@ async function handleRestart(name) {
 
 document.getElementById('refresh-btn').addEventListener('click', loadDashboard);
 document.addEventListener('DOMContentLoaded', loadDashboard);
+
+// Redraw chart on resize
+window.addEventListener('resize', () => {
+    if (activityHistory.length > 0) {
+        drawActivityChart(activityHistory);
+    }
+});
 
 // Auto-refresh every 10 seconds
 setInterval(loadDashboard, 10000);

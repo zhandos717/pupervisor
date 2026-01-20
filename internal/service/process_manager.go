@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
+	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -328,13 +331,20 @@ func (pm *ProcessManager) GetProcesses() []models.Process {
 			uptime = formatDuration(time.Since(state.StartTime))
 		}
 
+		memory := "N/A"
+		cpu := "N/A"
+		if state.Status == "running" && state.Pid > 0 {
+			memory = getProcessMemory(state.Pid)
+			cpu = getProcessCPU(state.Pid)
+		}
+
 		result = append(result, models.Process{
 			Name:   name,
 			Status: state.Status,
 			Pid:    state.Pid,
 			Uptime: uptime,
-			Memory: "N/A", // TODO: implement memory tracking
-			CPU:    "N/A", // TODO: implement CPU tracking
+			Memory: memory,
+			CPU:    cpu,
 		})
 	}
 
@@ -355,13 +365,20 @@ func (pm *ProcessManager) GetProcess(name string) (models.Process, bool) {
 		uptime = formatDuration(time.Since(state.StartTime))
 	}
 
+	memory := "N/A"
+	cpu := "N/A"
+	if state.Status == "running" && state.Pid > 0 {
+		memory = getProcessMemory(state.Pid)
+		cpu = getProcessCPU(state.Pid)
+	}
+
 	return models.Process{
 		Name:   name,
 		Status: state.Status,
 		Pid:    state.Pid,
 		Uptime: uptime,
-		Memory: "N/A",
-		CPU:    "N/A",
+		Memory: memory,
+		CPU:    cpu,
 	}, true
 }
 
@@ -444,4 +461,71 @@ func formatDuration(d time.Duration) string {
 		return fmt.Sprintf("%dm %ds", minutes, seconds)
 	}
 	return fmt.Sprintf("%ds", seconds)
+}
+
+func getProcessMemory(pid int) string {
+	if pid <= 0 {
+		return "N/A"
+	}
+
+	var cmd *exec.Cmd
+	if runtime.GOOS == "darwin" {
+		// macOS: use ps to get RSS in KB
+		cmd = exec.Command("ps", "-o", "rss=", "-p", strconv.Itoa(pid))
+	} else {
+		// Linux: use ps
+		cmd = exec.Command("ps", "-o", "rss=", "-p", strconv.Itoa(pid))
+	}
+
+	output, err := cmd.Output()
+	if err != nil {
+		return "N/A"
+	}
+
+	rssStr := strings.TrimSpace(string(output))
+	rssKB, err := strconv.ParseInt(rssStr, 10, 64)
+	if err != nil {
+		return "N/A"
+	}
+
+	return formatBytes(rssKB * 1024)
+}
+
+func getProcessCPU(pid int) string {
+	if pid <= 0 {
+		return "N/A"
+	}
+
+	cmd := exec.Command("ps", "-o", "%cpu=", "-p", strconv.Itoa(pid))
+	output, err := cmd.Output()
+	if err != nil {
+		return "N/A"
+	}
+
+	cpuStr := strings.TrimSpace(string(output))
+	cpu, err := strconv.ParseFloat(cpuStr, 64)
+	if err != nil {
+		return "N/A"
+	}
+
+	return fmt.Sprintf("%.1f%%", cpu)
+}
+
+func formatBytes(bytes int64) string {
+	const (
+		KB = 1024
+		MB = KB * 1024
+		GB = MB * 1024
+	)
+
+	switch {
+	case bytes >= GB:
+		return fmt.Sprintf("%.1f GB", float64(bytes)/float64(GB))
+	case bytes >= MB:
+		return fmt.Sprintf("%.1f MB", float64(bytes)/float64(MB))
+	case bytes >= KB:
+		return fmt.Sprintf("%.1f KB", float64(bytes)/float64(KB))
+	default:
+		return fmt.Sprintf("%d B", bytes)
+	}
 }
