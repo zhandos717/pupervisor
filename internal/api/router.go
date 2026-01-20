@@ -15,7 +15,7 @@ type Router struct {
 	*mux.Router
 }
 
-func NewRouter(svc *service.ProcessService, templatesFS, staticFS fs.FS) (*Router, error) {
+func NewRouter(pm *service.ProcessManager, templatesFS, staticFS fs.FS) (*Router, error) {
 	r := mux.NewRouter()
 
 	tmplHandler, err := handlers.NewTemplateHandler(templatesFS)
@@ -23,19 +23,19 @@ func NewRouter(svc *service.ProcessService, templatesFS, staticFS fs.FS) (*Route
 		return nil, err
 	}
 
-	procHandler := handlers.NewProcessHandler(svc)
+	procHandler := handlers.NewProcessHandler(pm)
 
-	// Health check endpoints (no middleware for faster response)
+	// Health check endpoints
 	r.HandleFunc("/health", handlers.HealthCheck).Methods(http.MethodGet)
 	r.HandleFunc("/ready", handlers.ReadyCheck).Methods(http.MethodGet)
 
-	// Web UI routes - serve static HTML pages that load data via API
+	// Web UI routes
 	r.HandleFunc("/", tmplHandler.ServeTemplate("dashboard")).Methods(http.MethodGet)
 	r.HandleFunc("/processes", tmplHandler.ServeTemplate("processes")).Methods(http.MethodGet)
 	r.HandleFunc("/logs", tmplHandler.ServeTemplate("logs")).Methods(http.MethodGet)
 	r.HandleFunc("/settings", tmplHandler.ServeTemplate("settings")).Methods(http.MethodGet)
 
-	// Serve static files (CSS, JS, images, etc.)
+	// Serve static files
 	staticHandler := http.FileServer(http.FS(staticFS))
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", staticHandler))
 

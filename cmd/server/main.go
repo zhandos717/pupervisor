@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"log"
 	"net/http"
 	"os"
@@ -16,17 +17,29 @@ import (
 )
 
 func main() {
+	configPath := flag.String("config", "pupervisor.yaml", "Path to process configuration file")
+	flag.Parse()
+
+	// Load server config
 	cfg := config.LoadConfig()
 
-	// Initialize services
-	processSvc := service.NewProcessService()
+	// Load process configuration
+	procCfg, err := config.LoadProcessConfig(*configPath)
+	if err != nil {
+		log.Printf("Warning: Could not load process config from %s: %v", *configPath, err)
+		log.Println("Starting with empty process list. Create pupervisor.yaml to define processes.")
+		procCfg = &config.SupervisorConfig{Processes: []config.ProcessConfig{}}
+	}
+
+	// Initialize process manager
+	pm := service.NewProcessManager(procCfg)
 
 	// Get embedded filesystems
 	templatesFS := web.GetTemplatesFS()
 	staticFS := web.GetStaticFS()
 
 	// Create router
-	router, err := api.NewRouter(processSvc, templatesFS, staticFS)
+	router, err := api.NewRouter(pm, templatesFS, staticFS)
 	if err != nil {
 		log.Fatalf("Failed to create router: %v", err)
 	}
@@ -40,9 +53,13 @@ func main() {
 		IdleTimeout:  60 * time.Second,
 	}
 
+	// Start auto-start processes
+	pm.StartAll()
+
 	// Start server in goroutine
 	go func() {
 		log.Printf("Starting Pupervisor Web UI server on %s", cfg.Server.Address)
+		log.Printf("Loaded %d process(es) from configuration", len(procCfg.Processes))
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server error: %v", err)
 		}
@@ -55,7 +72,10 @@ func main() {
 
 	log.Println("Shutting down server...")
 
-	// Give outstanding requests 30 seconds to complete
+	// Stop all managed processes
+	pm.StopAll()
+
+	// Shutdown HTTP server
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 

@@ -16,6 +16,10 @@
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
         .sidebar { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
         .status-indicator { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5); }
+        .log-line { font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+        .log-info { color: #3b82f6; }
+        .log-error { color: #ef4444; }
+        .log-warning { color: #f59e0b; }
     </style>
 </head>
 <body class="min-h-screen bg-gray-50 text-gray-700">
@@ -83,7 +87,6 @@
                             <option value="all">All Status</option>
                             <option value="running">Running</option>
                             <option value="stopped">Stopped</option>
-                            <option value="paused">Paused</option>
                         </select>
                     </div>
                 </div>
@@ -96,6 +99,38 @@
             </section>
         </div>
     </main>
+</div>
+
+<!-- Log Modal -->
+<div id="log-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[80vh] flex flex-col">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 rounded-t-xl flex justify-between items-center">
+            <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <i class="fas fa-terminal text-blue-500"></i>
+                <span id="modal-title">Process Output</span>
+            </h3>
+            <div class="flex items-center gap-3">
+                <label class="flex items-center gap-2 text-sm">
+                    <input type="checkbox" id="auto-scroll" checked class="rounded">
+                    Auto-scroll
+                </label>
+                <button onclick="closeLogModal()" class="p-2 hover:bg-gray-200 rounded-lg transition-colors">
+                    <i class="fas fa-times text-gray-600"></i>
+                </button>
+            </div>
+        </div>
+        <div id="log-content" class="flex-1 overflow-y-auto p-4 bg-gray-900 text-gray-100 font-mono text-sm min-h-[400px]">
+            <p class="text-gray-500">Loading logs...</p>
+        </div>
+        <div class="px-6 py-3 border-t border-gray-200 bg-gray-50 rounded-b-xl flex justify-between items-center">
+            <span id="log-status" class="text-sm text-gray-500">
+                <i class="fas fa-circle text-green-500 mr-1"></i> Live
+            </span>
+            <button onclick="clearLogs()" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm transition-colors">
+                <i class="fas fa-trash mr-1"></i> Clear View
+            </button>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -115,10 +150,16 @@ const API = {
     async restartProcess(name) {
         const res = await fetch(`/api/processes/${encodeURIComponent(name)}/restart`, { method: 'POST' });
         return res.ok;
+    },
+    async getProcessLogs(name) {
+        const res = await fetch(`/api/logs/worker/${encodeURIComponent(name)}`);
+        return res.ok ? res.json() : [];
     }
 };
 
 let allProcesses = [];
+let currentLogProcess = null;
+let logRefreshInterval = null;
 
 function getStatusClasses(status) {
     const s = status.toLowerCase();
@@ -129,28 +170,32 @@ function getStatusClasses(status) {
 
 function renderProcessCard(p) {
     const cls = getStatusClasses(p.status);
+    const isRunning = p.status.toLowerCase() === 'running';
+    const isStopped = p.status.toLowerCase() === 'stopped';
+
     return `
-        <div class="process-card bg-white border border-gray-200 rounded-lg p-5 min-h-[180px] flex flex-col border-l-4 ${cls.border}">
+        <div class="process-card bg-white border border-gray-200 rounded-lg p-5 min-h-[200px] flex flex-col border-l-4 ${cls.border}">
             <div class="flex items-center mb-3">
-                <span class="w-3 h-3 ${cls.bg} rounded-full mr-2 status-indicator"></span>
+                <span class="w-3 h-3 ${cls.bg} rounded-full mr-2 status-indicator ${isRunning ? 'pulse' : ''}"></span>
                 <h3 class="text-lg font-semibold text-gray-800">${p.name}</h3>
                 <span class="ml-auto px-2 py-1 text-xs ${cls.badge} rounded-full">${p.status}</span>
             </div>
             <div class="text-sm text-gray-600 mb-3 space-y-1">
                 <div class="flex justify-between"><span class="font-medium">PID:</span><span>${p.pid || 'N/A'}</span></div>
                 <div class="flex justify-between"><span class="font-medium">Uptime:</span><span>${p.uptime || 'N/A'}</span></div>
-                <div class="flex justify-between"><span class="font-medium">CPU:</span><span>${p.cpu || 'N/A'}</span></div>
-                <div class="flex justify-between"><span class="font-medium">Memory:</span><span>${p.memory || 'N/A'}</span></div>
             </div>
             <div class="flex flex-wrap gap-2 mt-auto">
-                <button onclick="handleStart('${p.name}')" class="flex-1 min-w-[70px] px-3 py-2 bg-green-500 text-white rounded text-sm hover:bg-green-600 transition-colors ${p.status.toLowerCase() === 'running' ? 'opacity-50 cursor-not-allowed' : ''}" ${p.status.toLowerCase() === 'running' ? 'disabled' : ''}>
-                    <i class="fas fa-play mr-1"></i> Start
+                <button onclick="handleStart('${p.name}')" class="flex-1 min-w-[60px] px-2 py-2 bg-green-500 text-white rounded text-sm hover:bg-green-600 transition-colors ${isRunning ? 'opacity-50 cursor-not-allowed' : ''}" ${isRunning ? 'disabled' : ''}>
+                    <i class="fas fa-play"></i>
                 </button>
-                <button onclick="handleStop('${p.name}')" class="flex-1 min-w-[70px] px-3 py-2 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-colors ${p.status.toLowerCase() === 'stopped' ? 'opacity-50 cursor-not-allowed' : ''}" ${p.status.toLowerCase() === 'stopped' ? 'disabled' : ''}>
-                    <i class="fas fa-stop mr-1"></i> Stop
+                <button onclick="handleStop('${p.name}')" class="flex-1 min-w-[60px] px-2 py-2 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-colors ${isStopped ? 'opacity-50 cursor-not-allowed' : ''}" ${isStopped ? 'disabled' : ''}>
+                    <i class="fas fa-stop"></i>
                 </button>
-                <button onclick="handleRestart('${p.name}')" class="flex-1 min-w-[70px] px-3 py-2 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600 transition-colors">
-                    <i class="fas fa-sync mr-1"></i> Restart
+                <button onclick="handleRestart('${p.name}')" class="flex-1 min-w-[60px] px-2 py-2 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600 transition-colors">
+                    <i class="fas fa-sync"></i>
+                </button>
+                <button onclick="showLogs('${p.name}')" class="flex-1 min-w-[60px] px-2 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 transition-colors">
+                    <i class="fas fa-terminal"></i>
                 </button>
             </div>
         </div>
@@ -161,7 +206,7 @@ function renderProcesses(processes) {
     const container = document.getElementById('processes-container');
     container.innerHTML = processes.length
         ? processes.map(renderProcessCard).join('')
-        : '<p class="col-span-full text-center text-gray-500 py-8">No processes found</p>';
+        : '<p class="col-span-full text-center text-gray-500 py-8">No processes configured. Edit pupervisor.yaml to add processes.</p>';
 }
 
 async function loadProcesses() {
@@ -178,23 +223,93 @@ function applyFilter() {
 }
 
 async function handleStart(name) {
-    if (await API.startProcess(name)) loadProcesses();
+    if (await API.startProcess(name)) {
+        await loadProcesses();
+    }
 }
 
 async function handleStop(name) {
-    if (await API.stopProcess(name)) loadProcesses();
+    if (await API.stopProcess(name)) {
+        await loadProcesses();
+    }
 }
 
 async function handleRestart(name) {
-    if (await API.restartProcess(name)) loadProcesses();
+    if (await API.restartProcess(name)) {
+        await loadProcesses();
+    }
 }
+
+// Log Modal Functions
+async function showLogs(processName) {
+    currentLogProcess = processName;
+    document.getElementById('modal-title').textContent = `${processName} - Output`;
+    document.getElementById('log-modal').classList.remove('hidden');
+
+    await refreshLogs();
+
+    // Start auto-refresh
+    logRefreshInterval = setInterval(refreshLogs, 2000);
+}
+
+async function refreshLogs() {
+    if (!currentLogProcess) return;
+
+    const logs = await API.getProcessLogs(currentLogProcess);
+    const container = document.getElementById('log-content');
+
+    if (logs.length === 0) {
+        container.innerHTML = '<p class="text-gray-500">No output yet. Start the process to see logs.</p>';
+        return;
+    }
+
+    container.innerHTML = logs.map(log => {
+        const levelClass = log.level === 'error' ? 'log-error' : log.level === 'warning' ? 'log-warning' : 'log-info';
+        const time = log.timestamp.split('T')[1]?.split('.')[0] || log.timestamp;
+        return `<div class="log-line py-1"><span class="text-gray-500">[${time}]</span> <span class="${levelClass}">${escapeHtml(log.message)}</span></div>`;
+    }).join('');
+
+    // Auto-scroll
+    if (document.getElementById('auto-scroll').checked) {
+        container.scrollTop = container.scrollHeight;
+    }
+}
+
+function closeLogModal() {
+    document.getElementById('log-modal').classList.add('hidden');
+    currentLogProcess = null;
+    if (logRefreshInterval) {
+        clearInterval(logRefreshInterval);
+        logRefreshInterval = null;
+    }
+}
+
+function clearLogs() {
+    document.getElementById('log-content').innerHTML = '<p class="text-gray-500">View cleared</p>';
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Close modal on escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeLogModal();
+});
+
+// Close modal on backdrop click
+document.getElementById('log-modal').addEventListener('click', (e) => {
+    if (e.target.id === 'log-modal') closeLogModal();
+});
 
 document.getElementById('refresh-btn').addEventListener('click', loadProcesses);
 document.getElementById('filter-status').addEventListener('change', applyFilter);
 document.addEventListener('DOMContentLoaded', loadProcesses);
 
-// Auto-refresh every 10 seconds
-setInterval(loadProcesses, 10000);
+// Auto-refresh every 5 seconds
+setInterval(loadProcesses, 5000);
 </script>
 </body>
 </html>
