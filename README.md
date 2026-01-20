@@ -191,44 +191,47 @@ processes:
 
 ```
 pupervisor/
+├── .github/
+│   └── workflows/           # GitHub Actions CI/CD
+│       ├── ci.yml
+│       └── release.yml
+├── api/
+│   └── openapi.yaml         # OpenAPI 3.0 specification
+├── build/
+│   └── docker/
+│       ├── Dockerfile
+│       └── .dockerignore
 ├── cmd/
 │   └── server/
-│       └── main.go              # Application entry point
-├── internal/
-│   ├── api/
-│   │   └── router.go            # HTTP routing
-│   ├── config/
-│   │   ├── config.go            # App configuration
-│   │   └── process_config.go    # Process configuration
-│   ├── handlers/
-│   │   ├── health_handler.go    # Health endpoints
-│   │   ├── process_handler.go   # Process API handlers
-│   │   └── template_handler.go  # HTML rendering
-│   ├── middleware/
-│   │   └── logging.go           # Request logging
-│   ├── models/
-│   │   └── process.go           # Data models
-│   ├── service/
-│   │   └── process_manager.go   # Process management logic
-│   └── storage/
-│       └── storage.go           # SQLite storage
-├── web/
-│   ├── css/
-│   │   └── style.css            # Styles (no CDN)
-│   ├── templates/
-│   │   ├── dashboard.html
-│   │   ├── processes.html
-│   │   ├── logs.html
-│   │   ├── crashes.html
-│   │   └── settings.html
-│   └── embed.go                 # Static file embedding
+│       └── main.go          # Application entry point
+├── configs/
+│   ├── .env.example
+│   ├── pupervisor.yaml.example
+│   └── pupervisor.docker.yaml
+├── deployments/
+│   └── docker-compose.yml   # Docker Compose config
 ├── docs/
-│   └── images/                  # Screenshots
-├── Dockerfile
-├── docker-compose.yml
+│   └── images/              # Screenshots
+├── internal/
+│   ├── api/                 # HTTP routing
+│   ├── config/              # Configuration
+│   ├── handlers/            # HTTP handlers
+│   ├── middleware/          # Middleware
+│   ├── models/              # Data models
+│   ├── service/             # Business logic
+│   └── storage/             # Database layer
+├── scripts/
+│   ├── setup.sh             # Dev environment setup
+│   └── build.sh             # Build script
+├── web/
+│   ├── css/                 # Styles (no CDN)
+│   ├── templates/           # HTML templates
+│   └── embed.go             # Static file embedding
+├── .goreleaser.yaml         # Release automation
+├── LICENSE
 ├── Makefile
-├── pupervisor.yaml              # Process configuration
-└── README.md
+├── README.md
+└── go.mod
 ```
 
 ## Development
