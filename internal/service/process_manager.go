@@ -311,7 +311,9 @@ func (pm *ProcessManager) monitorProcess(name string, state *ProcessState) {
 		case <-time.After(time.Duration(state.Config.StartSecs) * time.Second):
 			pm.mu.Unlock()
 			pm.log("info", fmt.Sprintf("Auto-restarting process %s", name), name)
-			pm.StartProcess(name)
+			if err := pm.StartProcess(name); err != nil {
+				pm.log("error", fmt.Sprintf("Failed to auto-restart process %s: %v", name, err), name)
+			}
 			pm.mu.Lock()
 		default:
 		}
@@ -403,7 +405,7 @@ func (pm *ProcessManager) StopProcess(name string) error {
 	// Wait for process to stop with timeout
 	done := make(chan struct{})
 	go func() {
-		state.Cmd.Wait()
+		_ = state.Cmd.Wait()
 		close(done)
 	}()
 
@@ -412,7 +414,7 @@ func (pm *ProcessManager) StopProcess(name string) error {
 		pm.log("info", fmt.Sprintf("Process %s stopped", name), name)
 	case <-time.After(time.Duration(state.Config.StopTimeout) * time.Second):
 		pm.log("warning", fmt.Sprintf("Process %s did not stop in time, killing", name), name)
-		state.Cmd.Process.Kill()
+		_ = state.Cmd.Process.Kill()
 	}
 
 	state.Status = "stopped"
