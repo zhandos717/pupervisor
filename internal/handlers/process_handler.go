@@ -12,11 +12,11 @@ import (
 )
 
 type ProcessHandler struct {
-	svc *service.ProcessService
+	pm *service.ProcessManager
 }
 
-func NewProcessHandler(svc *service.ProcessService) *ProcessHandler {
-	return &ProcessHandler{svc: svc}
+func NewProcessHandler(pm *service.ProcessManager) *ProcessHandler {
+	return &ProcessHandler{pm: pm}
 }
 
 type ErrorResponse struct {
@@ -45,7 +45,7 @@ func (h *ProcessHandler) writeError(w http.ResponseWriter, status int, err error
 }
 
 func (h *ProcessHandler) GetProcesses(w http.ResponseWriter, r *http.Request) {
-	processes := h.svc.GetProcesses()
+	processes := h.pm.GetProcesses()
 	h.writeJSON(w, http.StatusOK, processes)
 }
 
@@ -53,9 +53,13 @@ func (h *ProcessHandler) StartProcess(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
 
-	if err := h.svc.StartProcess(name); err != nil {
+	if err := h.pm.StartProcess(name); err != nil {
 		if errors.Is(err, service.ErrProcessNotFound) {
 			h.writeError(w, http.StatusNotFound, err, "Process not found: "+name)
+			return
+		}
+		if errors.Is(err, service.ErrProcessAlreadyRunning) {
+			h.writeError(w, http.StatusConflict, err, "Process already running: "+name)
 			return
 		}
 		h.writeError(w, http.StatusInternalServerError, err, "Failed to start process")
@@ -72,9 +76,13 @@ func (h *ProcessHandler) StopProcess(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
 
-	if err := h.svc.StopProcess(name); err != nil {
+	if err := h.pm.StopProcess(name); err != nil {
 		if errors.Is(err, service.ErrProcessNotFound) {
 			h.writeError(w, http.StatusNotFound, err, "Process not found: "+name)
+			return
+		}
+		if errors.Is(err, service.ErrProcessNotRunning) {
+			h.writeError(w, http.StatusConflict, err, "Process not running: "+name)
 			return
 		}
 		h.writeError(w, http.StatusInternalServerError, err, "Failed to stop process")
@@ -91,7 +99,7 @@ func (h *ProcessHandler) RestartProcess(w http.ResponseWriter, r *http.Request) 
 	vars := mux.Vars(r)
 	name := vars["name"]
 
-	if err := h.svc.RestartProcess(name); err != nil {
+	if err := h.pm.RestartProcess(name); err != nil {
 		if errors.Is(err, service.ErrProcessNotFound) {
 			h.writeError(w, http.StatusNotFound, err, "Process not found: "+name)
 			return
@@ -107,17 +115,17 @@ func (h *ProcessHandler) RestartProcess(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *ProcessHandler) GetLogs(w http.ResponseWriter, r *http.Request) {
-	logs := h.svc.GetLogs(50)
+	logs := h.pm.GetLogs(50)
 	h.writeJSON(w, http.StatusOK, logs)
 }
 
 func (h *ProcessHandler) GetWorkerLogs(w http.ResponseWriter, r *http.Request) {
-	logs := h.svc.GetWorkerLogs(50)
+	logs := h.pm.GetLogs(50)
 	h.writeJSON(w, http.StatusOK, logs)
 }
 
 func (h *ProcessHandler) GetSystemLogs(w http.ResponseWriter, r *http.Request) {
-	logs := h.svc.GetSystemLogs(50)
+	logs := h.pm.GetLogs(50)
 	h.writeJSON(w, http.StatusOK, logs)
 }
 
@@ -125,6 +133,6 @@ func (h *ProcessHandler) GetWorkerSpecificLogs(w http.ResponseWriter, r *http.Re
 	vars := mux.Vars(r)
 	workerName := vars["workerName"]
 
-	logs := h.svc.GetWorkerSpecificLogs(workerName, 50)
+	logs := h.pm.GetLogsByProcess(workerName, 50)
 	h.writeJSON(w, http.StatusOK, logs)
 }
