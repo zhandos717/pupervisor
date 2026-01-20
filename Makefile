@@ -3,7 +3,7 @@
 # Variables
 APP_NAME := pupervisor
 MAIN_PATH := ./cmd/server
-BUILD_DIR := ./build
+BUILD_DIR := ./build/bin
 CONFIG_FILE := pupervisor.yaml
 DB_FILE := pupervisor.db
 
@@ -24,14 +24,20 @@ LDFLAGS := -ldflags="-w -s -X main.Version=$(VERSION) -X main.BuildTime=$(BUILD_
 # Docker variables
 DOCKER_IMAGE := $(APP_NAME)
 DOCKER_TAG := latest
+DOCKER_FILE := build/docker/Dockerfile
+COMPOSE_FILE := deployments/docker-compose.yml
 
 .PHONY: all build run run-dev test clean lint fmt vet \
         docker-build docker-up docker-down docker-logs docker-clean \
-        deps install help
+        deps install setup help
 
 .DEFAULT_GOAL := help
 
 ##@ Development
+
+setup: ## Setup development environment
+	@chmod +x scripts/*.sh
+	@./scripts/setup.sh
 
 build: ## Build the binary
 	$(GOBUILD) $(LDFLAGS) -o $(APP_NAME) $(MAIN_PATH)
@@ -42,7 +48,7 @@ run: build ## Build and run the application
 run-dev: ## Run without building (faster for development)
 	$(GORUN) $(MAIN_PATH) --config $(CONFIG_FILE) --db $(DB_FILE)
 
-watch: ## Run with auto-reload (requires: go install github.com/air-verse/air@latest)
+watch: ## Run with auto-reload (requires air)
 	@which air > /dev/null || (echo "Installing air..." && go install github.com/air-verse/air@latest)
 	air
 
@@ -51,12 +57,15 @@ watch: ## Run with auto-reload (requires: go install github.com/air-verse/air@la
 test: ## Run tests
 	$(GOTEST) -v ./...
 
+test-race: ## Run tests with race detector
+	$(GOTEST) -v -race ./...
+
 test-cover: ## Run tests with coverage
 	$(GOTEST) -v -cover -coverprofile=coverage.out ./...
 	$(GOCMD) tool cover -html=coverage.out -o coverage.html
 	@echo "Coverage report: coverage.html"
 
-lint: ## Run linter (requires: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest)
+lint: ## Run linter
 	@which golangci-lint > /dev/null || (echo "Installing golangci-lint..." && go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest)
 	golangci-lint run
 
@@ -71,18 +80,23 @@ check: fmt vet lint test ## Run all checks (fmt, vet, lint, test)
 ##@ Build Variants
 
 build-linux: ## Build for Linux (amd64)
+	@mkdir -p $(BUILD_DIR)
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) $(LDFLAGS) -o $(BUILD_DIR)/$(APP_NAME)-linux-amd64 $(MAIN_PATH)
 
 build-linux-arm: ## Build for Linux (arm64)
+	@mkdir -p $(BUILD_DIR)
 	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(GOBUILD) $(LDFLAGS) -o $(BUILD_DIR)/$(APP_NAME)-linux-arm64 $(MAIN_PATH)
 
 build-darwin: ## Build for macOS (amd64)
+	@mkdir -p $(BUILD_DIR)
 	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) $(LDFLAGS) -o $(BUILD_DIR)/$(APP_NAME)-darwin-amd64 $(MAIN_PATH)
 
 build-darwin-arm: ## Build for macOS (arm64/M1)
+	@mkdir -p $(BUILD_DIR)
 	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 $(GOBUILD) $(LDFLAGS) -o $(BUILD_DIR)/$(APP_NAME)-darwin-arm64 $(MAIN_PATH)
 
 build-windows: ## Build for Windows (amd64)
+	@mkdir -p $(BUILD_DIR)
 	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 $(GOBUILD) $(LDFLAGS) -o $(BUILD_DIR)/$(APP_NAME)-windows-amd64.exe $(MAIN_PATH)
 
 build-all: ## Build for all platforms
@@ -93,33 +107,39 @@ build-all: ## Build for all platforms
 	@$(MAKE) build-darwin-arm
 	@$(MAKE) build-windows
 	@echo "Binaries built in $(BUILD_DIR)/"
-	@ls -la $(BUILD_DIR)/
+	@ls -lh $(BUILD_DIR)/
 
 ##@ Docker
 
 docker-build: ## Build Docker image
-	docker build -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
+	docker build -f $(DOCKER_FILE) -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
 
 docker-up: ## Start with docker-compose
-	docker-compose up -d
+	docker-compose -f $(COMPOSE_FILE) up -d
 
 docker-down: ## Stop docker-compose
-	docker-compose down
+	docker-compose -f $(COMPOSE_FILE) down
 
 docker-logs: ## Show docker-compose logs
-	docker-compose logs -f
+	docker-compose -f $(COMPOSE_FILE) logs -f
 
 docker-restart: docker-down docker-up ## Restart docker-compose
 
 docker-rebuild: ## Rebuild and restart
-	docker-compose up -d --build
+	docker-compose -f $(COMPOSE_FILE) up -d --build
 
 docker-clean: ## Remove Docker image and volumes
-	docker-compose down -v
+	docker-compose -f $(COMPOSE_FILE) down -v
 	docker rmi $(DOCKER_IMAGE):$(DOCKER_TAG) 2>/dev/null || true
 
 docker-shell: ## Open shell in running container
-	docker-compose exec pupervisor /bin/sh
+	docker-compose -f $(COMPOSE_FILE) exec pupervisor /bin/sh
+
+##@ Release
+
+release-snapshot: ## Create snapshot release (local testing)
+	@which goreleaser > /dev/null || (echo "Installing goreleaser..." && go install github.com/goreleaser/goreleaser@latest)
+	goreleaser release --snapshot --clean
 
 ##@ Dependencies
 
@@ -139,6 +159,7 @@ update: ## Update dependencies
 clean: ## Remove build artifacts
 	rm -f $(APP_NAME)
 	rm -rf $(BUILD_DIR)
+	rm -rf dist/
 	rm -f coverage.out coverage.html
 	$(GOCMD) clean
 
@@ -156,7 +177,7 @@ uninstall: ## Remove binary from $GOPATH/bin
 ##@ Help
 
 help: ## Show this help
-	@awk 'BEGIN {FS = ":.*##"; printf "\n\033[1mPupervisor - Process Supervisor\033[0m\n\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*##"; printf "\n\033[1mPupervisor - Process Supervisor\033[0m\n\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-17s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 info: ## Show build info
 	@echo "App:       $(APP_NAME)"

@@ -1,0 +1,401 @@
+openapi: 3.0.3
+info:
+  title: Pupervisor API
+  description: Process manager REST API
+  version: 1.0.0
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+tags:
+  - name: processes
+    description: Process management
+  - name: logs
+    description: Log viewing
+  - name: crashes
+    description: Crash history
+  - name: settings
+    description: Application settings
+  - name: health
+    description: Health checks
+
+paths:
+  /api/processes:
+    get:
+      tags: [processes]
+      summary: List all processes
+      responses:
+        '200':
+          description: List of processes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Process'
+
+  /api/processes/{name}/start:
+    post:
+      tags: [processes]
+      summary: Start a process
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Process started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Process not found
+        '409':
+          description: Process already running
+
+  /api/processes/{name}/stop:
+    post:
+      tags: [processes]
+      summary: Stop a process
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Process stopped
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Process not found
+        '409':
+          description: Process not running
+
+  /api/processes/{name}/restart:
+    post:
+      tags: [processes]
+      summary: Restart a process
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Process restarted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Process not found
+
+  /api/processes/restart-all:
+    post:
+      tags: [processes]
+      summary: Restart all running processes
+      responses:
+        '200':
+          description: Bulk restart completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkRestartResponse'
+
+  /api/processes/restart-selected:
+    post:
+      tags: [processes]
+      summary: Restart selected processes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                names:
+                  type: array
+                  items:
+                    type: string
+              required:
+                - names
+      responses:
+        '200':
+          description: Bulk restart completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkRestartResponse'
+
+  /api/logs:
+    get:
+      tags: [logs]
+      summary: Get all logs
+      responses:
+        '200':
+          description: List of log entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LogEntry'
+
+  /api/logs/worker:
+    get:
+      tags: [logs]
+      summary: Get worker output logs
+      responses:
+        '200':
+          description: List of worker log entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LogEntry'
+
+  /api/logs/system:
+    get:
+      tags: [logs]
+      summary: Get system logs
+      responses:
+        '200':
+          description: List of system log entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LogEntry'
+
+  /api/logs/worker/{name}:
+    get:
+      tags: [logs]
+      summary: Get logs for specific worker
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of worker log entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LogEntry'
+
+  /api/crashes:
+    get:
+      tags: [crashes]
+      summary: Get crash history
+      responses:
+        '200':
+          description: List of crash records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CrashRecord'
+
+  /api/crashes/stats:
+    get:
+      tags: [crashes]
+      summary: Get crash statistics
+      responses:
+        '200':
+          description: Crash statistics by process
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: integer
+
+  /api/crashes/{name}:
+    get:
+      tags: [crashes]
+      summary: Get crashes for specific process
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of crash records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CrashRecord'
+
+  /api/settings:
+    get:
+      tags: [settings]
+      summary: Get settings
+      responses:
+        '200':
+          description: Current settings
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+    post:
+      tags: [settings]
+      summary: Update settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: string
+      responses:
+        '200':
+          description: Settings updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /health:
+    get:
+      tags: [health]
+      summary: Health check
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /ready:
+    get:
+      tags: [health]
+      summary: Readiness check
+      responses:
+        '200':
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ready
+
+components:
+  schemas:
+    Process:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum: [running, stopped]
+        pid:
+          type: integer
+        uptime:
+          type: string
+        memory:
+          type: string
+        cpu:
+          type: string
+        command:
+          type: string
+        args:
+          type: array
+          items:
+            type: string
+        directory:
+          type: string
+
+    LogEntry:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        level:
+          type: string
+          enum: [info, warning, error]
+        message:
+          type: string
+        worker:
+          type: string
+
+    CrashRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        process_name:
+          type: string
+        exit_code:
+          type: integer
+        signal:
+          type: string
+        error_message:
+          type: string
+        stdout:
+          type: string
+        stderr:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+        crashed_at:
+          type: string
+          format: date-time
+        uptime:
+          type: string
+
+    SuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+
+    BulkRestartResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        restarted:
+          type: integer
+        failed:
+          type: integer
+        message:
+          type: string

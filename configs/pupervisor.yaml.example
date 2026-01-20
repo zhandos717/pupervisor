@@ -1,0 +1,58 @@
+# Pupervisor Configuration
+
+processes:
+  # PHP built-in server
+  #  - name: php-server
+  #    command: php
+  #    args:
+  #      - -S
+  #      - localhost:8888
+  #      - -t
+  #      - /tmp
+  #    autostart: false
+  #    autorestart: false
+  #    stopsignal: SIGTERM
+  #    stoptimeout: 5
+
+  # PHP script example
+  - name: php-worker
+    command: php
+    args:
+      - artisan
+      - export:excel
+    directory: /Users/zhandoszhandarbek/PhpstormProjects/repricer
+    autostart: false
+    autorestart: false
+    startsecs: 3
+
+  # PHP artisan queue worker (Laravel)
+  - name: laravel-queue
+    command: php
+    args:
+      - artisan
+      - queue:work
+      - --sleep=3
+      - --tries=3
+    directory: /Users/zhandoszhandarbek/PhpstormProjects/repricer
+    environment:
+      APP_ENV: production
+    autostart: true
+    autorestart: true
+
+  # PHP-FPM (if installed)
+  # - name: php-fpm
+  #   command: php-fpm
+  #   args:
+  #     - --nodaemonize
+  #   autostart: true
+  #   autorestart: true
+
+  # Simple test process
+#  - name: ping-test
+#    command: ping
+#    args:
+#      - -c
+#      - "10"
+#      - 127.0.0.1
+#    autostart: false
+#    autorestart: false

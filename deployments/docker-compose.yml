@@ -1,14 +1,14 @@
 services:
   pupervisor:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: build/docker/Dockerfile
     container_name: pupervisor
     ports:
       - "8080:8080"
     volumes:
       # Mount config file
-      - ./pupervisor.yaml:/app/config/pupervisor.yaml:ro
+      - ../configs/pupervisor.docker.yaml:/app/config/pupervisor.yaml:ro
       # Persist SQLite database
       - pupervisor_data:/app/data
     environment:
