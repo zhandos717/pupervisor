@@ -1,0 +1,201 @@
+{{define "processes.html"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pupervisor - Processes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%); }
+        .process-card { transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+        .process-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        .sidebar { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
+        .status-indicator { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5); }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-50 text-gray-700">
+<div class="flex flex-col md:flex-row min-h-screen">
+    <!-- Sidebar -->
+    <aside class="sidebar text-white w-full md:w-64 p-5 hidden md:block">
+        <div class="mb-8">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <i class="fas fa-cogs"></i>
+                <span>Pupervisor</span>
+            </h1>
+            <p class="text-gray-400 text-sm mt-1">Control Panel</p>
+        </div>
+        <nav class="space-y-2">
+            <a href="/" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-700 transition-colors">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="/processes" class="nav-link flex items-center gap-3 p-3 rounded-lg bg-blue-600 text-white">
+                <i class="fas fa-server"></i>
+                <span>Processes</span>
+            </a>
+            <a href="/logs" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-700 transition-colors">
+                <i class="fas fa-file-alt"></i>
+                <span>Logs</span>
+            </a>
+            <a href="/settings" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-700 transition-colors">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1">
+        <!-- Header -->
+        <header class="bg-white text-gray-800 py-4 sticky top-0 z-50 shadow-sm border-b">
+            <div class="px-5 md:px-8 flex justify-between items-center w-full">
+                <h1 class="text-xl md:text-2xl font-bold flex items-center gap-2">
+                    <i class="fas fa-server text-blue-500"></i>
+                    <span>Process Management</span>
+                </h1>
+                <div class="flex gap-3 items-center">
+                    <div class="hidden md:flex items-center gap-2 text-sm">
+                        <div class="w-2 h-2 bg-green-500 rounded-full pulse"></div>
+                        <span>System Online</span>
+                    </div>
+                    <button id="refresh-btn" class="p-2 rounded-md bg-blue-100 hover:bg-blue-200 transition-colors" title="Refresh">
+                        <i class="fas fa-sync-alt text-blue-600"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Process List -->
+        <div class="px-5 md:px-8 py-6">
+            <section class="bg-white rounded-xl shadow-sm border border-gray-200">
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                    <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-server text-blue-500"></i>
+                        All Processes
+                    </h2>
+                    <div class="flex gap-2">
+                        <select id="filter-status" class="text-xs px-3 py-1 bg-gray-100 border rounded-md">
+                            <option value="all">All Status</option>
+                            <option value="running">Running</option>
+                            <option value="stopped">Stopped</option>
+                            <option value="paused">Paused</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="processes-container" class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="col-span-full text-center text-gray-500 py-8">
+                        <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                        <p>Loading processes...</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<script>
+const API = {
+    async getProcesses() {
+        const res = await fetch('/api/processes');
+        return res.ok ? res.json() : [];
+    },
+    async startProcess(name) {
+        const res = await fetch(`/api/processes/${encodeURIComponent(name)}/start`, { method: 'POST' });
+        return res.ok;
+    },
+    async stopProcess(name) {
+        const res = await fetch(`/api/processes/${encodeURIComponent(name)}/stop`, { method: 'POST' });
+        return res.ok;
+    },
+    async restartProcess(name) {
+        const res = await fetch(`/api/processes/${encodeURIComponent(name)}/restart`, { method: 'POST' });
+        return res.ok;
+    }
+};
+
+let allProcesses = [];
+
+function getStatusClasses(status) {
+    const s = status.toLowerCase();
+    if (s === 'running') return { border: 'border-green-500', bg: 'bg-green-500', badge: 'bg-green-100 text-green-800', text: 'text-green-600' };
+    if (s === 'stopped') return { border: 'border-red-500', bg: 'bg-red-500', badge: 'bg-red-100 text-red-800', text: 'text-red-600' };
+    return { border: 'border-yellow-500', bg: 'bg-yellow-500', badge: 'bg-yellow-100 text-yellow-800', text: 'text-yellow-600' };
+}
+
+function renderProcessCard(p) {
+    const cls = getStatusClasses(p.status);
+    return `
+        <div class="process-card bg-white border border-gray-200 rounded-lg p-5 min-h-[180px] flex flex-col border-l-4 ${cls.border}">
+            <div class="flex items-center mb-3">
+                <span class="w-3 h-3 ${cls.bg} rounded-full mr-2 status-indicator"></span>
+                <h3 class="text-lg font-semibold text-gray-800">${p.name}</h3>
+                <span class="ml-auto px-2 py-1 text-xs ${cls.badge} rounded-full">${p.status}</span>
+            </div>
+            <div class="text-sm text-gray-600 mb-3 space-y-1">
+                <div class="flex justify-between"><span class="font-medium">PID:</span><span>${p.pid || 'N/A'}</span></div>
+                <div class="flex justify-between"><span class="font-medium">Uptime:</span><span>${p.uptime || 'N/A'}</span></div>
+                <div class="flex justify-between"><span class="font-medium">CPU:</span><span>${p.cpu || 'N/A'}</span></div>
+                <div class="flex justify-between"><span class="font-medium">Memory:</span><span>${p.memory || 'N/A'}</span></div>
+            </div>
+            <div class="flex flex-wrap gap-2 mt-auto">
+                <button onclick="handleStart('${p.name}')" class="flex-1 min-w-[70px] px-3 py-2 bg-green-500 text-white rounded text-sm hover:bg-green-600 transition-colors ${p.status.toLowerCase() === 'running' ? 'opacity-50 cursor-not-allowed' : ''}" ${p.status.toLowerCase() === 'running' ? 'disabled' : ''}>
+                    <i class="fas fa-play mr-1"></i> Start
+                </button>
+                <button onclick="handleStop('${p.name}')" class="flex-1 min-w-[70px] px-3 py-2 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-colors ${p.status.toLowerCase() === 'stopped' ? 'opacity-50 cursor-not-allowed' : ''}" ${p.status.toLowerCase() === 'stopped' ? 'disabled' : ''}>
+                    <i class="fas fa-stop mr-1"></i> Stop
+                </button>
+                <button onclick="handleRestart('${p.name}')" class="flex-1 min-w-[70px] px-3 py-2 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600 transition-colors">
+                    <i class="fas fa-sync mr-1"></i> Restart
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function renderProcesses(processes) {
+    const container = document.getElementById('processes-container');
+    container.innerHTML = processes.length
+        ? processes.map(renderProcessCard).join('')
+        : '<p class="col-span-full text-center text-gray-500 py-8">No processes found</p>';
+}
+
+async function loadProcesses() {
+    allProcesses = await API.getProcesses();
+    applyFilter();
+}
+
+function applyFilter() {
+    const filter = document.getElementById('filter-status').value;
+    const filtered = filter === 'all'
+        ? allProcesses
+        : allProcesses.filter(p => p.status.toLowerCase() === filter);
+    renderProcesses(filtered);
+}
+
+async function handleStart(name) {
+    if (await API.startProcess(name)) loadProcesses();
+}
+
+async function handleStop(name) {
+    if (await API.stopProcess(name)) loadProcesses();
+}
+
+async function handleRestart(name) {
+    if (await API.restartProcess(name)) loadProcesses();
+}
+
+document.getElementById('refresh-btn').addEventListener('click', loadProcesses);
+document.getElementById('filter-status').addEventListener('change', applyFilter);
+document.addEventListener('DOMContentLoaded', loadProcesses);
+
+// Auto-refresh every 10 seconds
+setInterval(loadProcesses, 10000);
+</script>
+</body>
+</html>
+{{end}}

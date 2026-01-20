@@ -1,0 +1,77 @@
+<div id="settings-page" class="page active">
+    <div class="px-5 md:px-8 py-6">
+        <section class="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <i class="fas fa-cog text-blue-500"></i>
+                    System Settings
+                </h2>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- General Settings -->
+                    <div>
+                        <h3 class="text-md font-semibold text-gray-800 mb-4">General Settings</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">System Name</label>
+                                <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" value="{{.SystemName}}">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Refresh Interval</label>
+                                <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <option {{if eq .RefreshInterval "5s"}}selected{{end}}>5 seconds</option>
+                                    <option {{if eq .RefreshInterval "10s"}}selected{{end}}>10 seconds</option>
+                                    <option {{if eq .RefreshInterval "30s"}}selected{{end}}>30 seconds</option>
+                                    <option {{if eq .RefreshInterval "1m"}}selected{{end}}>1 minute</option>
+                                    <option {{if eq .RefreshInterval "5m"}}selected{{end}}>5 minutes</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Log Retention</label>
+                                <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <option {{if eq .LogRetention "24h"}}selected{{end}}>24 hours</option>
+                                    <option {{if eq .LogRetention "7d"}}selected{{end}}>7 days</option>
+                                    <option {{if eq .LogRetention "30d"}}selected{{end}}>30 days</option>
+                                    <option {{if eq .LogRetention "90d"}}selected{{end}}>90 days</option>
+                                    <option {{if eq .LogRetention "forever"}}selected{{end}}>Forever</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                
+                    <!-- Notification Settings -->
+                    <div>
+                        <h3 class="text-md font-semibold text-gray-80 mb-4">Notification Settings</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="email-notifications" class="h-4 w-4 text-blue-600 rounded focus:ring-blue-500" {{if .EmailNotifications}}checked{{end}}>
+                                <label for="email-notifications" class="ml-2 block text-sm text-gray-700">Email Notifications</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="push-notifications" class="h-4 w-4 text-blue-600 rounded focus:ring-blue-500" {{if .PushNotifications}}checked{{end}}>
+                                <label for="push-notifications" class="ml-2 block text-sm text-gray-700">Push Notifications</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="critical-alerts" class="h-4 w-4 text-red-600 rounded focus:ring-red-500" {{if .CriticalAlerts}}checked{{end}}>
+                                <label for="critical-alerts" class="ml-2 block text-sm text-gray-700">Critical Alerts</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="process-events" class="h-4 w-4 text-blue-600 rounded focus:ring-blue-500" {{if .ProcessEvents}}checked{{end}}>
+                                <label for="process-events" class="ml-2 block text-sm text-gray-700">Process Events</label>
+                            </div>
+                        </div>
+                    </div>
+                
+                <div class="mt-8 flex justify-end">
+                    <button class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors mr-3">
+                        Cancel
+                    </button>
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors" onclick="saveSettings()">
+                        Save Settings
+                    </button>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>

@@ -1,0 +1,214 @@
+{{define "logs.html"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pupervisor - Logs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%); }
+        .log-entry { border-left: 3px solid transparent; transition: all 0.2s ease; }
+        .log-entry:hover { background-color: rgba(249, 250, 251, 0.8); }
+        .log-info { border-left-color: #3b82f6; }
+        .log-warning { border-left-color: #f59e0b; }
+        .log-error { border-left-color: #ef4444; }
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        .sidebar { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-50 text-gray-700">
+<div class="flex flex-col md:flex-row min-h-screen">
+    <!-- Sidebar -->
+    <aside class="sidebar text-white w-full md:w-64 p-5 hidden md:block">
+        <div class="mb-8">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <i class="fas fa-cogs"></i>
+                <span>Pupervisor</span>
+            </h1>
+            <p class="text-gray-400 text-sm mt-1">Control Panel</p>
+        </div>
+        <nav class="space-y-2">
+            <a href="/" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-700 transition-colors">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="/processes" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-700 transition-colors">
+                <i class="fas fa-server"></i>
+                <span>Processes</span>
+            </a>
+            <a href="/logs" class="nav-link flex items-center gap-3 p-3 rounded-lg bg-blue-600 text-white">
+                <i class="fas fa-file-alt"></i>
+                <span>Logs</span>
+            </a>
+            <a href="/settings" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-700 transition-colors">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1">
+        <!-- Header -->
+        <header class="bg-white text-gray-800 py-4 sticky top-0 z-50 shadow-sm border-b">
+            <div class="px-5 md:px-8 flex justify-between items-center w-full">
+                <h1 class="text-xl md:text-2xl font-bold flex items-center gap-2">
+                    <i class="fas fa-file-alt text-blue-500"></i>
+                    <span>System Logs</span>
+                </h1>
+                <div class="flex gap-3 items-center">
+                    <div class="hidden md:flex items-center gap-2 text-sm">
+                        <div class="w-2 h-2 bg-green-500 rounded-full pulse"></div>
+                        <span>System Online</span>
+                    </div>
+                    <button id="refresh-btn" class="p-2 rounded-md bg-blue-100 hover:bg-blue-200 transition-colors" title="Refresh">
+                        <i class="fas fa-sync-alt text-blue-600"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Logs Content -->
+        <div class="px-5 md:px-8 py-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Worker Logs Section -->
+            <section class="bg-white rounded-xl shadow-sm border border-gray-200">
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                            <i class="fas fa-terminal text-blue-500"></i>
+                            Worker Logs
+                        </h2>
+                        <div class="flex flex-wrap gap-2">
+                            <select id="log-level-filter" class="px-3 py-1 border border-gray-300 rounded-md text-sm">
+                                <option value="all">All Levels</option>
+                                <option value="info">Info</option>
+                                <option value="warning">Warning</option>
+                                <option value="error">Error</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div id="worker-logs-container" class="h-96 overflow-y-auto p-4 bg-gray-50 font-mono text-xs">
+                    <div class="text-center text-gray-500 py-8">
+                        <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                        <p>Loading worker logs...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- System Logs Section -->
+            <section class="bg-white rounded-xl shadow-sm border border-gray-200">
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                    <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-file-alt text-blue-500"></i>
+                        System Logs
+                    </h2>
+                </div>
+                <div id="system-logs-container" class="h-96 overflow-y-auto p-4 bg-gray-50 font-mono text-xs">
+                    <div class="text-center text-gray-500 py-8">
+                        <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                        <p>Loading system logs...</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- All Logs Section -->
+        <div class="px-5 md:px-8 pb-6">
+            <section class="bg-white rounded-xl shadow-sm border border-gray-200">
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                    <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-list text-blue-500"></i>
+                        All Logs
+                    </h2>
+                </div>
+                <div id="all-logs-container" class="h-64 overflow-y-auto p-4 bg-gray-50 font-mono text-xs">
+                    <div class="text-center text-gray-500 py-8">
+                        <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                        <p>Loading logs...</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<script>
+const API = {
+    async getLogs() {
+        const res = await fetch('/api/logs');
+        return res.ok ? res.json() : [];
+    },
+    async getWorkerLogs() {
+        const res = await fetch('/api/logs/worker');
+        return res.ok ? res.json() : [];
+    },
+    async getSystemLogs() {
+        const res = await fetch('/api/logs/system');
+        return res.ok ? res.json() : [];
+    }
+};
+
+let allWorkerLogs = [];
+
+function renderLogEntry(log) {
+    const level = (log.level || 'info').toLowerCase();
+    const levelClass = level === 'error' ? 'log-error' : level === 'warning' ? 'log-warning' : 'log-info';
+    const textClass = level === 'error' ? 'text-red-600' : level === 'warning' ? 'text-yellow-600' : 'text-blue-600';
+    return `
+        <div class="log-entry ${levelClass} p-3 mb-2 bg-white rounded border-l-4">
+            <div class="flex justify-between">
+                <span class="text-gray-500">[${log.timestamp}]</span>
+                <span class="${textClass} font-medium">${log.level.toUpperCase()}</span>
+            </div>
+            <div class="text-gray-700 mt-1">${log.message}</div>
+            ${log.worker ? `<div class="text-gray-400 text-xs mt-1">Worker: ${log.worker}</div>` : ''}
+        </div>
+    `;
+}
+
+function renderLogs(container, logs) {
+    container.innerHTML = logs.length
+        ? logs.slice().reverse().map(renderLogEntry).join('')
+        : '<p class="text-center text-gray-500 py-8">No logs available</p>';
+}
+
+async function loadLogs() {
+    const [logs, workerLogs, systemLogs] = await Promise.all([
+        API.getLogs(),
+        API.getWorkerLogs(),
+        API.getSystemLogs()
+    ]);
+
+    allWorkerLogs = workerLogs;
+
+    renderLogs(document.getElementById('all-logs-container'), logs);
+    applyWorkerFilter();
+    renderLogs(document.getElementById('system-logs-container'), systemLogs);
+}
+
+function applyWorkerFilter() {
+    const levelFilter = document.getElementById('log-level-filter').value;
+    let filtered = allWorkerLogs;
+
+    if (levelFilter !== 'all') {
+        filtered = filtered.filter(log => log.level.toLowerCase() === levelFilter);
+    }
+
+    renderLogs(document.getElementById('worker-logs-container'), filtered);
+}
+
+document.getElementById('refresh-btn').addEventListener('click', loadLogs);
+document.getElementById('log-level-filter').addEventListener('change', applyWorkerFilter);
+document.addEventListener('DOMContentLoaded', loadLogs);
+
+// Auto-refresh every 10 seconds
+setInterval(loadLogs, 10000);
+</script>
+</body>
+</html>
+{{end}}

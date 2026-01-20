@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pupervisor Web UI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%);
+        }
+
+        .log-timestamp {
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+        }
+
+        .status-indicator {
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .process-card {
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+
+        .process-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .log-entry {
+            border-left: 3px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .log-entry:hover {
+            background-color: rgba(249, 250, 251, 0.8);
+        }
+
+        .log-info {
+            border-left-color: #3b82f6;
+        }
+
+        .log-warning {
+            border-left-color: #f59e0b;
+        }
+
+        .log-error {
+            border-left-color: #ef4444;
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .glow {
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .status-running {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .status-stopped {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .status-restarting {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+
+        .sidebar {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        }
+        
+        .page {
+            display: none;
+        }
+        
+        .page.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-50 text-gray-700">
+<div class="flex flex-col md:flex-row min-h-screen">
+    <!-- Sidebar -->
+    <aside class="sidebar text-white w-full md:w-64 p-5 hidden md:block">
+        <div class="mb-8">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <i class="fas fa-cogs"></i>
+                <span>Pupervisor</span>
+            </h1>
+            <p class="text-gray-400 text-sm mt-1">Control Panel</p>
+        </div>
+        <nav class="space-y-2">
+            <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg bg-blue-600 text-white" data-page="dashboard">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-700 transition-colors" data-page="processes">
+                <i class="fas fa-server"></i>
+                <span>Processes</span>
+            </a>
+            <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-700 transition-colors" data-page="logs">
+                <i class="fas fa-file-alt"></i>
+                <span>Logs</span>
+            </a>
+            <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-700 transition-colors" data-page="settings">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </a>
+        </nav>
+        <div class="mt-auto pt-8 border-t border-gray-700">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div>
+                    <p class="font-medium">Admin</p>
+                    <p class="text-xs text-gray-400">System Administrator</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Mobile Navigation -->
+    <div class="md:hidden bg-gray-800 text-white p-3">
+        <div class="flex justify-between items-center">
+            <h1 class="text-lg font-bold">Pupervisor</h1>
+            <div class="flex gap-4">
+                <a href="#" class="nav-link text-white" data-page="dashboard">
+                    <i class="fas fa-tachometer-alt"></i>
+                </a>
+                <a href="#" class="nav-link text-white" data-page="processes">
+                    <i class="fas fa-server"></i>
+                </a>
+                <a href="#" class="nav-link text-white" data-page="logs">
+                    <i class="fas fa-file-alt"></i>
+                </a>
+                <a href="#" class="nav-link text-white" data-page="settings">
+                    <i class="fas fa-cog"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="flex-1">
+        <!-- Header -->
+        <header class="bg-white text-gray-800 py-4 sticky top-0 z-50 shadow-sm border-b">
+            <div class="px-5 md:px-8 flex justify-between items-center w-full">
+                <div class="flex items-center gap-3">
+                    <button class="md:hidden p-2 rounded-md bg-gray-100 hover:bg-gray-200 transition-colors" title="Menu" aria-label="Menu">
+                        <i class="fas fa-bars text-gray-700"></i>
+                    </button>
+                    <h1 class="text-xl md:text-2xl font-bold flex items-center gap-2">
+                        <i class="fas fa-tachometer-alt text-blue-500"></i>
+                        <span id="page-title">Dashboard</span>
+                    </h1>
+                </div>
+                <div class="flex gap-3 items-center">
+                    <div class="hidden md:flex items-center gap-2 text-sm">
+                        <div class="w-2 h-2 bg-green-500 rounded-full pulse"></div>
+                        <span>System Online</span>
+                    </div>
+                    <button id="refresh-btn" class="p-2 rounded-md bg-blue-10 hover:bg-blue-200 transition-colors glow" title="Refresh" aria-label="Refresh">
+                        <i class="fas fa-sync-alt text-blue-600"></i>
+                    </button>
+                    <div class="relative">
+                        <button class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors" title="Notifications" aria-label="Notifications">
+                            <i class="fas fa-bell text-gray-700"></i>
+                            <span class="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Pages Container -->
+        <div id="pages-container">
+            <!-- Dashboard Page -->
+            <div id="dashboard-page" class="page active">
+                <!-- Dashboard Stats -->
+                <div class="px-5 md:px-8 py-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm">Active Processes</p>
+                                <p class="text-2xl font-bold mt-1">12</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
+                                <i class="fas fa-play-circle text-green-50 text-xl"></i>
+                            </div>
+                        <div class="mt-4">
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-green-500 h-2 rounded-full" style="width: 75%"></div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">75% running</p>
+                        </div>
+                    
+                    <div class="bg-white rounded-xl shadow-sm border-gray-200 p-5">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm">Total Workers</p>
+                                <p class="text-2xl font-bold mt-1">24</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
+                                <i class="fas fa-users text-blue-500 text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-blue-500 h-2 rounded-full" style="width: 85%"></div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">85% online</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm">CPU Usage</p>
+                                <p class="text-2xl font-bold mt-1">42%</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-lg bg-yellow-100 flex items-center justify-center">
+                                <i class="fas fa-microchip text-yellow-500 text-xl"></i>
+                            </div>
+                        <div class="mt-4">
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-yellow-500 h-2 rounded-full" style="width: 42%"></div>
+                            </div>
+                            <p class="text-xs text-gray-50 mt-2">Optimal</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm">Memory Usage</p>
+                                <p class="text-2xl font-bold mt-1">68%</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center">
+                                <i class="fas fa-memory text-purple-500 text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-purple-500 h-2 rounded-full" style="width: 68%"></div>
+                            </div>
+                            <p class="text-xs text-gray-50 mt-2">Normal</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Content -->
+                <div class="px-5 md:px-8 grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                    <!-- Recent Processes -->
+                    <section class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200">
+                        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                            <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                <i class="fas fa-server text-blue-500"></i>
+                                Recent Processes
+                            </h2>
+                            <a href="#" class="text-xs px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-md transition-colors" data-page="processes">
+                                <i class="fas fa-external-link-alt mr-1"></i> View All
+                            </a>
+                        </div>
+                        <div id="process-status" class="p-4 grid grid-cols-1 gap-4">
+                            <!-- Process Card Example -->
+                            <div class="process-card bg-white border border-gray-200 rounded-lg p-5 min-h-[140px] flex flex-col border-l-4 border-green-500">
+                                <div class="flex items-center mb-3">
+                                    <span class="w-3 h-3 bg-green-500 rounded-full mr-2 status-indicator"></span>
+                                    <h3 class="text-lg font-semibold text-gray-800">Worker Process 1</h3>
+                                    <span class="ml-auto px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">Running</span>
+                                </div>
+                                <div class="text-sm text-gray-600 mb-3 space-y-1">
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">Status:</span>
+                                        <span class="text-green-600">Running</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">PID:</span>
+                                        <span>12345</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">Uptime:</span>
+                                        <span>2h 15m</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">CPU:</span>
+                                        <span>12.4%</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">Memory:</span>
+                                        <span>45.2 MB</span>
+                                    </div>
+                                <div class="flex flex-wrap gap-2 mt-auto">
+                                    <button class="flex-1 min-w-[70px] px-3 py-2 bg-green-50 text-white rounded text-sm hover:bg-green-600 transition-colors">
+                                        <i class="fas fa-play mr-1"></i> Start
+                                    </button>
+                                    <button class="flex-1 min-w-[70px] px-3 py-2 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-colors">
+                                        <i class="fas fa-stop mr-1"></i> Stop
+                                    </button>
+                                    <button class="flex-1 min-w-[70px] px-3 py-2 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600 transition-colors">
+                                        <i class="fas fa-sync mr-1"></i> Restart
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Additional process cards -->
+                            <div class="process-card bg-white border border-gray-200 rounded-lg p-5 min-h-[140px] flex flex-col border-l-4 border-red-500">
+                                <div class="flex items-center mb-3">
+                                    <span class="w-3 h-3 bg-red-500 rounded-full mr-2 status-indicator"></span>
+                                    <h3 class="text-lg font-semibold text-gray-800">Database Process</h3>
+                                    <span class="ml-auto px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">Stopped</span>
+                                </div>
+                                <div class="text-sm text-gray-600 mb-3 space-y-1">
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">Status:</span>
+                                        <span class="text-red-600">Stopped</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">PID:</span>
+                                        <span>N/A</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">Uptime:</span>
+                                        <span>0s</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">CPU:</span>
+                                        <span>0%</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">Memory:</span>
+                                        <span>0 MB</span>
+                                    </div>
+                                </div>
+                                <div class="flex flex-wrap gap-2 mt-auto">
+                                    <button class="flex-1 min-w-[70px] px-3 py-2 bg-green-500 text-white rounded text-sm hover:bg-green-600 transition-colors">
+                                        <i class="fas fa-play mr-1"></i> Start
+                                    </button>
+                                    <button class="flex-1 min-w-[70px] px-3 py-2 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-colors" disabled>
+                                        <i class="fas fa-stop mr-1"></i> Stop
+                                    </button>
+                                    <button class="flex-1 min-w-[70px] px-3 py-2 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600 transition-colors">
+                                        <i class="fas fa-sync mr-1"></i> Restart
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Recent Logs -->
+                    <section class="bg-white rounded-xl shadow-sm border border-gray-200">
+                        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                            <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                <i class="fas fa-terminal text-blue-500"></i>
+                                Recent Logs
+                            </h2>
+                            <a href="#" class="text-xs px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-md transition-colors" data-page="logs">
+                                <i class="fas fa-external-link-alt mr-1"></i> View All
+                            </a>
+                        </div>
+                        <div id="worker-logs-container" class="h-80 overflow-y-auto p-4 bg-gray-50 font-mono text-xs">
+                            <!-- Log entries -->
+                            <div class="log-entry log-info p-3 mb-2 bg-white rounded border-l-4">
+                                <div class="flex justify-between">
+                                    <span class="log-timestamp text-gray-500">[2023-10-08 07:30:15]</span>
+                                    <span class="text-blue-600 font-medium">INFO</span>
+                                </div>
+                                <div class="text-gray-700 mt-1">Worker process 1 started successfully</div>
+                            </div>
+                            <div class="log-entry log-warning p-3 mb-2 bg-white rounded border-l-4">
+                                <div class="flex justify-between">
+                                    <span class="log-timestamp text-gray-500">[2023-10-08 07:28:42]</span>
+                                    <span class="text-yellow-600 font-medium">WARN</span>
+                                </div>
+                                <div class="text-gray-700 mt-1">High memory usage detected in worker-2</div>
+                            </div>
+                            <div class="log-entry log-error p-3 mb-2 bg-white rounded border-l-4">
+                                <div class="flex justify-between">
+                                    <span class="log-timestamp text-gray-500">[2023-10-08 07:25:33]</span>
+                                    <span class="text-red-600 font-medium">ERROR</span>
+                                </div>
+                                <div class="text-gray-700 mt-1">Connection timeout in database process</div>
+                            </div>
+                            <div class="log-entry log-info p-3 mb-2 bg-white rounded border-l-4">
+                                <div class="flex justify-between">
+                                    <span class="log-timestamp text-gray-500">[2023-10-08 07:20:18]</span>
+                                    <span class="text-blue-600 font-medium">INFO</span>
+                                </div>
+                                <div class="text-gray-700 mt-1">System maintenance completed</div>
+                            </div>
+                            <div class="log-entry log-info p-3 mb-2 bg-white rounded border-l-4">
+                                <div class="flex justify-between">
+                                    <span class="log-timestamp text-gray-500">[2023-10-08 07:15:05]</span>
+                                    <span class="text-blue-600 font-medium">INFO</span>
+                                </div>
+                                <div class="text-gray-700 mt-1">New configuration loaded</div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Processes Page -->
+            <div id="processes-page" class="page">
+                <div class="px-5 md:px-8 py-6">
+                    <!-- Process Status Section -->
+                    <section class="bg-white rounded-xl shadow-sm border border-gray-200">
+                        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                            <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                <i class="fas fa-server text-blue-500"></i>
+                                Process Management
+                            </h2>
+                            <div class="flex gap-2">
+                                <button class="text-xs px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors">
+                                    <i class="fas fa-filter mr-1"></i> Filter
+                                </button>
+                                <button class="text-xs px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-md transition-colors">
+                                    <i class="fas fa-plus mr-1"></i> Add Process
+                                </button>
+                            </div>
+                        <div id="process-status" class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <!-- Process Card Example -->
+                            <div class="process-card bg-white border-gray-200 rounded-lg p-5 min-h-[140px] flex flex-col border-l-4 border-green-500">
+                                <div class="flex items-center mb-3">
+                                    <span class="w-3 h-3 bg-green-50 rounded-full mr-2 status-indicator"></span>
+                                    <h3 class="text-lg font-semibold text-gray-800">Worker Process 1</h3>
+                                    <span class="ml-auto px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">Running</span>
+                                </div>
+                                <div class="text-sm text-gray-600 mb-3 space-y-1">
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">Status:</span>
+                                        <span class="text-green-600">Running</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">PID:</span>
+                                        <span>12345</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">Uptime:</span>
+                                        <span>2h 15m</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">CPU:</span>
+                                        <span>12.4%</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">Memory:</span>
+                                        <span>45.2 MB</span>
+                                    </div>
+                                <div class="flex flex-wrap gap-2 mt-auto">
+                                    <button class="flex-1 min-w-[70px] px-3 py-2 bg-green-500 text-white rounded text-sm hover:bg-green-600 transition-colors">
+                                        <i class="fas fa-play mr-1"></i> Start
+                                    </button>
+                                    <button class="flex-1 min-w-[70px] px-3 py-2 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-colors">
+                                        <i class="fas fa-stop mr-1"></i> Stop
+                                    </button>
+                                    <button class="flex-1 min-w-[70px] px-3 py-2 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600 transition-colors">
+                                        <i class="fas fa-sync mr-1"></i> Restart
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Additional process cards -->
+                            <div class="process-card bg-white border border-gray-200 rounded-lg p-5 min-h-[140px] flex flex-col border-l-4 border-red-500">
+                                <div class="flex items-center mb-3">
+                                    <span class="w-3 h-3 bg-red-500 rounded-full mr-2 status-indicator"></span>
+                                    <h3 class="text-lg font-semibold text-gray-800">Database Process</h3>
+                                    <span class="ml-auto px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">Stopped</span>
+                                </div>
+                                <div class="text-sm text-gray-600 mb-3 space-y-1">
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">Status:</span>
+                                        <span class="text-red-600">Stopped</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">PID:</span>
+                                        <span>N/A</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">Uptime:</span>
+                                        <span>0s</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">CPU:</span>
+                                        <span>0%</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">Memory:</span>
+                                        <span>0 MB</span>
+                                    </div>
+                                <div class="flex flex-wrap gap-2 mt-auto">
+                                    <button class="flex-1 min-w-[70px] px-3 py-2 bg-green-500 text-white rounded text-sm hover:bg-green-600 transition-colors">
+                                        <i class="fas fa-play mr-1"></i> Start
+                                    </button>
+                                    <button class="flex-1 min-w-[70px] px-3 py-2 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-colors" disabled>
+                                        <i class="fas fa-stop mr-1"></i> Stop
+                                    </button>
+                                    <button class="flex-1 min-w-[70px] px-3 py-2 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600 transition-colors">
+                                        <i class="fas fa-sync mr-1"></i> Restart
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="process-card bg-white border border-gray-200 rounded-lg p-5 min-h-[140px] flex flex-col border-l-4 border-yellow-500">
+                                <div class="flex items-center mb-3">
+                                    <span class="w-3 h-3 bg-yellow-500 rounded-full mr-2 status-indicator"></span>
+                                    <h3 class="text-lg font-semibold text-gray-800">API Process</h3>
+                                    <span class="ml-auto px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">Restarting</span>
+                                </div>
+                                <div class="text-sm text-gray-600 mb-3 space-y-1">
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">Status:</span>
+                                        <span class="text-yellow-600">Restarting</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">PID:</span>
+                                        <span>12347</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">Uptime:</span>
+                                        <span>5m 20s</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">CPU:</span>
+                                        <span>8.2%</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">Memory:</span>
+                                        <span>28.7 MB</span>
+                                    </div>
+                                <div class="flex flex-wrap gap-2 mt-auto">
+                                    <button class="flex-1 min-w-[70px] px-3 py-2 bg-green-500 text-white rounded text-sm hover:bg-green-600 transition-colors" disabled>
+                                        <i class="fas fa-play mr-1"></i> Start
+                                    </button>
+                                    <button class="flex-1 min-w-[70px] px-3 py-2 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-colors">
+                                        <i class="fas fa-stop mr-1"></i> Stop
+                                    </button>
+                                    <button class="flex-1 min-w-[70px] px-3 py-2 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600 transition-colors">
+                                        <i class="fas fa-sync mr-1"></i> Restart
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Logs Page -->
+            <div id="logs-page" class="page">
+                <div class="px-5 md:px-8 py-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Worker Logs Section -->
+                    <section class="bg-white rounded-xl shadow-sm border border-gray-200">
+                        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                            <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                <i class="fas fa-terminal text-blue-500"></i>
+                                Worker Logs
+                            </h2>
+                            <div class="flex flex-wrap gap-3">
+                                <select id="worker-filter" class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="all">All Workers</option>
+                                    <option value="worker-1">Worker 1</option>
+                                    <option value="worker-2">Worker 2</option>
+                                    <option value="worker-3">Worker 3</option>
+                                </select>
+                                <select id="log-level-filter" class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="all">All Levels</option>
+                                    <option value="info">Info</option>
+                                    <option value="warning">Warning</option>
+                                    <option value="error">Error</option>
+                                </select>
+                                <button id="clear-logs-btn" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors text-sm flex items-center">
+                                    <i class="fas fa-broom mr-2"></i> Clear
+                                </button>
+                            </div>
+                        </div>
+                        <div id="worker-logs-container" class="h-96 min-h-[24rem] overflow-y-auto p-4 bg-gray-50 font-mono text-xs">
+                            <!-- Log entries -->
+                            <div class="log-entry log-info p-3 mb-2 bg-white rounded border-l-4">
+                                <div class="flex justify-between">
+                                    <span class="log-timestamp text-gray-500">[2023-10-08 07:30:15]</span>
+                                    <span class="text-blue-600 font-medium">INFO</span>
+                                </div>
+                                <div class="text-gray-700 mt-1">Worker process 1 started successfully</div>
+                            </div>
+                            <div class="log-entry log-warning p-3 mb-2 bg-white rounded border-l-4">
+                                <div class="flex justify-between">
+                                    <span class="log-timestamp text-gray-500">[2023-10-08 07:28:42]</span>
+                                    <span class="text-yellow-600 font-medium">WARN</span>
+                                </div>
+                                <div class="text-gray-700 mt-1">High memory usage detected in worker-2</div>
+                            </div>
+                            <div class="log-entry log-error p-3 mb-2 bg-white rounded border-l-4">
+                                <div class="flex justify-between">
+                                    <span class="log-timestamp text-gray-500">[2023-10-08 07:25:33]</span>
+                                    <span class="text-red-600 font-medium">ERROR</span>
+                                </div>
+                                <div class="text-gray-700 mt-1">Connection timeout in database process</div>
+                            </div>
+                            <div class="log-entry log-info p-3 mb-2 bg-white rounded border-l-4">
+                                <div class="flex justify-between">
+                                    <span class="log-timestamp text-gray-500">[2023-10-08 07:20:18]</span>
+                                    <span class="text-blue-600 font-medium">INFO</span>
+                                </div>
+                                <div class="text-gray-700 mt-1">System maintenance completed</div>
+                            </div>
+                            <div class="log-entry log-info p-3 mb-2 bg-white rounded border-l-4">
+                                <div class="flex justify-between">
+                                    <span class="log-timestamp text-gray-500">[2023-10-08 07:15:05]</span>
+                                    <span class="text-blue-600 font-medium">INFO</span>
+                                </div>
+                                <div class="text-gray-700 mt-1">New configuration loaded</div>
+                            </div>
+                            <div class="log-entry log-info p-3 mb-2 bg-white rounded border-l-4">
+                                <div class="flex justify-between">
+                                    <span class="log-timestamp text-gray-500">[2023-10-08 07:10:32]</span>
+                                    <span class="text-blue-600 font-medium">INFO</span>
+                                </div>
+                                <div class="text-gray-700 mt-1">Worker process 3 started successfully</div>
+                            </div>
+                            <div class="log-entry log-warning p-3 mb-2 bg-white rounded border-l-4">
+                                <div class="flex justify-between">
+                                    <span class="log-timestamp text-gray-500">[2023-10-08 07:05:47]</span>
+                                    <span class="text-yellow-600 font-medium">WARN</span>
+                                </div>
+                                <div class="text-gray-700 mt-1">CPU usage above 80% for worker-1</div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- System Logs Section -->
+                    <section class="bg-white rounded-xl shadow-sm border border-gray-200">
+                        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                            <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                <i class="fas fa-file-alt text-blue-500"></i>
+                                System Logs
+                            </h2>
+                        </div>
+                        <div id="system-logs-container" class="h-96 min-h-[24rem] overflow-y-auto p-4 bg-gray-50 font-mono text-xs">
+                            <!-- System log entries -->
+                            <div class="log-entry log-info p-3 mb-2 bg-white rounded border-l-4">
+                                <div class="flex justify-between">
+                                    <span class="log-timestamp text-gray-500">[2023-10-08 07:35:10]</span>
+                                    <span class="text-blue-600 font-medium">INFO</span>
+                                </div>
+                                <div class="text-gray-700 mt-1">System started successfully</div>
+                            </div>
+                            <div class="log-entry log-info p-3 mb-2 bg-white rounded border-l-4">
+                                <div class="flex justify-between">
+                                    <span class="log-timestamp text-gray-500">[2023-10-08 07:34:5]</span>
+                                    <span class="text-blue-600 font-medium">INFO</span>
+                                </div>
+                                <div class="text-gray-700 mt-1">All processes initialized</div>
+                            </div>
+                            <div class="log-entry log-warning p-3 mb-2 bg-white rounded border-l-4">
+                                <div class="flex justify-between">
+                                    <span class="log-timestamp text-gray-500">[2023-10-08 07:30:00]</span>
+                                    <span class="text-yellow-600 font-medium">WARN</span>
+                                </div>
+                                <div class="text-gray-700 mt-1">Memory usage at 75%</div>
+                            </div>
+                            <div class="log-entry log-info p-3 mb-2 bg-white rounded border-l-4">
+                                <div class="flex justify-between">
+                                    <span class="log-timestamp text-gray-500">[2023-10-08 07:25:15]</span>
+                                    <span class="text-blue-600 font-medium">INFO</span>
+                                </div>
+                                <div class="text-gray-700 mt-1">Configuration file loaded</div>
+                            </div>
+                            <div class="log-entry log-error p-3 mb-2 bg-white rounded border-l-4">
+                                <div class="flex justify-between">
+                                    <span class="log-timestamp text-gray-500">[2023-10-08 07:20:30]</span>
+                                    <span class="text-red-600 font-medium">ERROR</span>
+                                </div>
+                                <div class="text-gray-700 mt-1">Database connection failed</div>
+                            </div>
+                            <div class="log-entry log-info p-3 mb-2 bg-white rounded border-l-4">
+                                <div class="flex justify-between">
+                                    <span class="log-timestamp text-gray-500">[2023-10-08 07:15:45]</span>
+                                    <span class="text-blue-600 font-medium">INFO</span>
+                                </div>
+                                <div class="text-gray-700 mt-1">Backup completed successfully</div>
+                            </div>
+                            <div class="log-entry log-info p-3 mb-2 bg-white rounded border-l-4">
+                                <div class="flex justify-between">
+                                    <span class="log-timestamp text-gray-500">[2023-10-08 07:10:20]</span>
+                                    <span class="text-blue-600 font-medium">INFO</span>
+                                </div>
+                                <div class="text-gray-700 mt-1">User authentication module loaded</div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Settings Page -->
+            <div id="settings-page" class="page">
+                <div class="px-5 md:px-8 py-6">
+                    <section class="bg-white rounded-xl shadow-sm border border-gray-200">
+                        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                            <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                <i class="fas fa-cog text-blue-500"></i>
+                                System Settings
+                            </h2>
+                        </div>
+                        <div class="p-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- General Settings -->
+                                <div>
+                                    <h3 class="text-md font-semibold text-gray-800 mb-4">General Settings</h3>
+                                    <div class="space-y-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">System Name</label>
+                                            <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-50" value="Pupervisor System">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Refresh Interval</label>
+                                            <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                                <option>5 seconds</option>
+                                                <option>10 seconds</option>
+                                                <option>30 seconds</option>
+                                                <option>1 minute</option>
+                                                <option>5 minutes</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Log Retention</label>
+                                            <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                                <option>24 hours</option>
+                                                <option>7 days</option>
+                                                <option>30 days</option>
+                                                <option>90 days</option>
+                                                <option>Forever</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                
+                                <!-- Notification Settings -->
+                                <div>
+                                    <h3 class="text-md font-semibold text-gray-800 mb-4">Notification Settings</h3>
+                                    <div class="space-y-4">
+                                        <div class="flex items-center">
+                                            <input type="checkbox" id="email-notifications" class="h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
+                                            <label for="email-notifications" class="ml-2 block text-sm text-gray-700">Email Notifications</label>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <input type="checkbox" id="push-notifications" class="h-4 w-4 text-blue-600 rounded focus:ring-blue-500" checked>
+                                            <label for="push-notifications" class="ml-2 block text-sm text-gray-70">Push Notifications</label>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <input type="checkbox" id="critical-alerts" class="h-4 w-4 text-red-600 rounded focus:ring-red-500" checked>
+                                            <label for="critical-alerts" class="ml-2 block text-sm text-gray-700">Critical Alerts</label>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <input type="checkbox" id="process-events" class="h-4 w-4 text-blue-600 rounded focus:ring-blue-500" checked>
+                                            <label for="process-events" class="ml-2 block text-sm text-gray-700">Process Events</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            
+                            <div class="mt-8 flex justify-end">
+                                <button class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors mr-3">
+                                    Cancel
+                                </button>
+                                <button class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                                    Save Settings
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    // Page navigation functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const navLinks = document.querySelectorAll('.nav-link');
+        const pages = document.querySelectorAll('.page');
+        const pageTitle = document.getElementById('page-title');
+        
+        // Function to show a specific page
+        function showPage(pageId) {
+            // Hide all pages
+            pages.forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            // Show the selected page
+            const selectedPage = document.getElementById(pageId + '-page');
+            if (selectedPage) {
+                selectedPage.classList.add('active');
+            }
+            
+            // Update page title
+            const titleMap = {
+                'dashboard': 'Dashboard',
+                'processes': 'Process Management',
+                'logs': 'System Logs',
+                'settings': 'System Settings'
+            };
+            
+            if (pageTitle && titleMap[pageId]) {
+                pageTitle.textContent = titleMap[pageId];
+            }
+        }
+        
+        // Add click event to navigation links
+        navLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const page = this.getAttribute('data-page');
+                showPage(page);
+                
+                // Update active state in sidebar
+                navLinks.forEach(link => link.classList.remove('bg-blue-600', 'text-white'));
+                this.classList.add('bg-blue-600', 'text-white');
+            });
+        });
+        
+        // Initialize with dashboard page
+        showPage('dashboard');
+    });
+</script>
+</body>
+</html>
